@@ -1,0 +1,576 @@
+﻿#! dno -version 0.1 -markup khand -tab 1
+
+/*
+ * These requirements are something of a rebirth of the DNO (Dino) software
+ * design notation that I invented 1986 and have used since. Inspired by the
+ * Pandoc tool that uses an intermediary to translate between a large number
+ * of common formats (Word, Html, LaTex, and several dozen others) I would
+ * like to do something similar. But instead of a translator from what one
+ * might consider one word-processing format to another, I want to transform
+ * an easily typed document like DNO or Markdown into Class Diagrams, or software
+ * Acceptance Test, or application code.
+ *                                       -- Keith Pinson, July 2015
+ */
+
+A Go-Between script is meant to by used by a software program not the end-user
+ It preserves order [[order def]]
+ It saves indentation level [[indent def]]
+ It consists of lines of markup [[markup def]]
+  with interjected references to special content [[block def]]
+
+[[order def]]
+The order of lines and the characters within those lines is important to the author of a document, therefore
+ Content is grouped by lines [[Line def]]
+ and then by characters [[characer def]]
+
+[[character def]]
+Characters are stored conventially within strings
+ If stored in memory two-byte characters should be used
+ else if stored as a file, "utf-8" encoding should be used
+
+[[line def]]
+Each line is significant
+ A line is defined as a string of zero of more characters until the end-of-line is reached [[end-of-line def]]
+ A line can begin with an indentation [[indent def]]
+ A blank line is a special line type [[blank line def]]
+ A line can contain inline markup [[inline markup def]]
+ A line can contain block references [[block reference]]
+
+[[end-of-line def]]
+End of lines should be marked with a newline character (0x0a) rather than a just a null character.
+
+[[indent def]]
+Indentation levels should not be indicated via parent-child tree-like structure, instead
+ A simple integer value should be used to indicate indentation level
+ Zero should indicate no indentation
+ A ceiling of 32,767 should be mark the maximum indentation level
+
+[[blank line def]]
+A blank line is significant
+ it should consist of a single newline: no whitespace and zero indentation
+
+[[inline markup def]]
+Inline markup is syntatic text that affects the appears or display of the text for a single line
+ It must be able to be processed and displayed without a internet, disk, or other type of wait
+ Other markup languages may used externally, but internally only the khand markup language is used [[khand markup]]
+ Content that will require a possible wait, such as an image, is marked with a reference [[block reference]]
+
+[[block reference]]
+A block reference marks where a block is to be inserted
+ It must have a "ready" flag that indicates
+  pending (the block is not ready to be displayed)
+  ready (the block can be displayed immediately)
+  dynamic (the block can be displayed immediately, but may change)
+ It must have a "changed" flag that indicates
+  the "ready" flag has changed and the block needs to be displayed
+  the "ready" flag has not changed
+ Of course, when "changed" flag is lit then the content the block references must be updated
+
+[[block def]]
+A Block can be
+ Shebang [[shebang block]]
+ Comment [[comment block]]
+ Meta [[meta block]]
+ Call-out [[callout block]]
+ Fence [[fenced block]]
+ Dynamic [[dynamic block]]
+ Format Control [[format block]]
+ Style-by-example [[style block]]
+ Media [[media block]]
+
+[[shebang block]]
+By convention the first non-blank line of a script starts with a shebang (#!), so
+Arguments are a dash, "-", and a name string followed by space and the argument optionally surrounded by double-quotes
+A version can be specified [[version argument]]
+The Given-tab size can be specified [[tab argument]]
+The default markup language can be specified [[markup argument]]
+
+[[version argument]]
+The version refers to the version of DNO, not the design the file is defining
+ A version is specified as "-version <string>", where the string is 10 characters or less
+ The version string can be any characters except a space
+
+[[tab argument]]
+The Given-tab size is specified as "-tab <number of spaces>"
+
+[[markup argument]]
+The default markup is specified as "-markup <string>"
+ The markup string is case-insensitive
+ The markup string indicates what flavor of markup to use to process a line, either
+  "khand" [[khand markup]]
+  "markdown" [[markdown subset]]
+
+[[comment block]]
+A newline or zero-or-more whitespace characters and two slashes, "//", mark the beginning of single-line comment
+A newline marks the end of a single-line comment
+A newline or zero-or-more whitespace characters and a slash-star, "/*", marks the beginning of a comment-block
+A newline or zero-or-more whitespace characters and a star-slash, "*/", marks the end of a comment-block
+slash-star comments can be nested
+A star-slash must always pair with a slash-star even when nested
+If the end-of-file is reached, any un-closed comments are closed
+Any comments inside a callout block are ignored
+  If the end of the callout block, "]]", is reached, any unclosed comment are closed
+  If the end of the callout block was wrapped by a slash-star style comment block, the closing star-slash outside the callout will be treated as text
+Any comments inside a fenced block are handled by the fence
+A hash, "#", is not the start of a comment
+Any characters in a single line comment are ignored so that:
+ slash-star comment-blocks are ignored
+ shebang blocks are ignored
+ callout blocks are ignored
+ fenced blocks are ignored
+ a line is ignored
+Any characters in comment-block are ignored except nested comment-blocks so that:
+ slash-star comment-blocks are ignored
+ shebang blocks are ignored
+ callout blocks are ignored
+ fenced blocks are ignored
+ a line is ignored
+
+[[meta block]]
+Documents often track the author, dates written, and so on.  This information is not usually displayed in the document.
+Meta
+ Key & Value
+ Document Title
+ Document Name
+
+
+
+[[callout block]]
+A callout block is marked by (2) square-brackets, "[[", at-least-one or more characters and (2) closing square-brackets, "]]"
+A callout block cannot span more than one line so that a newline acts to close the callout block
+Double opening brackets, "[[", that are surrounded by double-quotes are not the start of callouts.
+Double closing brackets, "]]", that are surrounded by double-quotes are not the end of callouts.
+A callout that is preceded by a newline, zero or more whitespace characters and no other characters is a callout
+A callout that follows a newline and some non-whitespace characters is a reference to a callout
+A callout that is not a reference can be followed by a newline and still be attached to the following line or block
+A callout can be attached to
+ a Comment Block
+ another Callout Block
+ A Fenced Block
+A callout block attached to a Shebang is ignored
+The text inside a comment block is case-insensitive
+If two or more callout blocks have the same text and are not references then neither callout is presumed to be the callout
+Zero or more callout references can exist for each callout
+
+[[fenced block]]
+A fenced block consists of all text contained by double curly braces, "{{", "}}"
+Quoted Double opening braces, "{{", that are surrounded by double-quotes are not the start of a fenced block
+Quoted Double closing braces, "}}", that are surrounded by double-quotes are not the end of a fenced block
+Double opening braces immediately followed by a double-quote indicates the contents are raw text.[[raw text]]
+Triple opening braces indicates the contents are code[[source code]]
+A double brace, "{{", followed by any character any character other than a double-quote or another brace is markup.[[markup]]
+Double braces can be nested but only the outer braces make up the fence
+A double-quote must precede a double brace to close raw text
+A triple closing brace is required to close source code
+Before any non-whitespace characters a shebang/bangshe pair can indicate the content more precisely[[fenced shebang]]
+
+[[fenced shebang]]
+A fenced shebang opens with a hash, exclamation mark, and space, "#! ", and closes with " !#"
+The text it contains is passed to the processor that handles the content of the fenced block
+The fenced shebang should follow with zero or more spaces the opening fenced block
+A fenced shebang is not included in the text of the fenced block
+
+[[raw text]]
+All text within the raw-text fenced block with the exception of a fenced shebang is left as is with no transformation
+For each opening raw text fence nested in the test another closing raw text fence will be required
+
+[[source code]]
+All code within the source-code fence block with the exception of a fenced shebang is passed as is for transformation
+The following languages can be specified in the fenced shebang
+ bash shell
+ coldfusion
+ c# c-sharp csharp
+ c++ cpp
+ c
+ cs
+ delphi pascal
+ erlang
+ groovy
+ js jscript javascript
+ java
+ perl
+ php
+ plain text
+ powershell
+ python
+ ruby
+ scala
+ sql
+ basic visual basic
+ xml html
+
+[[markup]]
+All code within the fenced block markup with the exception of a fenced shebang is passed as is for transformation
+The following markup languages can be specified in the fenced shebang
+ khand [[khand markup]]
+ markdown [[markdown markup]]
+
+
+
+Format Control
+ Page-Head (First-Page, Left-Page, Right-Page)
+ Page-Foot (First-Page, Left-Page, Right-Page)
+ Page-Head [[page head block]]
+ Page-Foot [[page foot block]]
+ Link
+ Hard Page Break
+ Side bar
+ float
+
+column 1 | column 2
+-------- | --------
+item A   |   100
+item B   |   200
+
+block quote
+
+
+Media
+
+Dynamic
+ A program that runs
+
+[[khand markup]]
+Khand is a markup language that is applicable to a single line of text, meaning its markup does not span or effect more than a single line
+ The following "font-effect" markup can be nested within each other
+  **bold**
+  //italic//
+  __underline__
+  --strike through--
+  ^^super-script^^
+  vvsub-scriptvv
+  ||monospace||
+
+ A line may contain a reference
+  [[reference]]
+  The text between the brackets is the reference id
+  The reference id is case-insensitive
+
+ The following markup is for justification
+  it can contain "font-effect" markup
+  by default Left-to-Right text is left-justified, so plain-text should be marked with left-justification if justified markup exists on the line
+  >>center<<, can only be used once per line
+  <<left<<, can only be use once per line
+  >>right>>, can only be used once per line
+  <<fully-justified>>, can only be used once per line and cannot be mixed with other justification
+
+ There is only one type of heading markup
+  sub-headings are inferred by the indentation level, upto 6 heading levels
+  ##Heading##
+
+ To be able to display the markup and prevent its processing use double braces
+  {{"raw text"}}
+  Raw text can contain double braces and triple braces
+  Nesting of braces, meaning opening braces are paired with closing braces, is assumed
+  Nested braces cannot stretch beyond a single line
+
+ To be able to display inline code triple braces are used
+  {{{code}}}
+   Code can be preceded with a fenced shebang that begins with the programming language
+    #!./shell!#
+    #!./c#!# or #!./c-sharp!# or #!./csharp!#
+    #!./c++!# or #!./cpp!#
+    #!./c!#
+    #!./erlang!#
+    #!./groovy!#
+    #!./html!#
+    #!./haskell!#
+    #!./js!# or #!./jscript!# or #!./javascript!#
+    #!./java!#
+    #!./perl!#
+    #!./php!#
+    #!./python!#
+    #!./ruby!#
+    #!./scala!#
+    #!./sql!#
+    #!./basic!# or #!./visualbasic!# or #!./vb!#
+    #!./xml!#
+  Code displayed as khand markup cannot stretch past a single line
+
+ Un-ordered lists
+  A line that begins with a hyphen or an asterisk, is an item from an un-ordered list
+  - bullet
+  * bullet
+
+ Order lists
+  Numbers, letters, and roman-numerals, in upper and lower-case can be used
+   1.
+   a.
+   A.
+   i.
+   I.
+  Authors may follow a line with 1. by 2. and then 3., so the actual characters used should be ignored
+  The list should begin with either a, 1, or i in the indicated case.
+  It is assumed that if the previous non-blank line has the same indentation and is an ordered list item then the item is part of the same list
+  If list items use different types, eg. 1. and then b., then the items are from different lists.
+
+  entity reference including unicode
+   XML style entity references are supported, they begin with an ampersand (&) and end with a semicolon (;)
+   Unicode is usually presented as hexadecimal, eg; U2020, but here decimal is used with a leading pound sign (#), &#8224;
+   The following entity references are supported, although not all fonts can display these characters
+    &euro; (€) 0x0080 Euro
+    &nbsp; () 0x00A0 Nonbreaking space
+    &iexcl; (¡) 0x00A1 Inverted exclamation
+    &cent; (¢) 0x00A2 Cent sign
+    &pound; (£) 0x00A3 Pound sterling
+    &curren; (¤) 0x00A4 General currency sign
+    &yen; (¥) 0x00A5 Yen sign
+    &brvbar; (¦) 0x00A6 Broken vertical bar
+    &brkbar; (¦) 0x00A6 Broken vertical bar
+    &sect; (§) 0x00A7 Section sign
+    &uml; (¨) 0x00A8 Diæresis / Umlaut
+    &die; (¨) 0x00A8 Diæresis / Umlaut
+    &copy; (©) 0x00A9 Copyright
+    &ordf; (ª) 0x00AA Feminine ordinal
+    &laquo; («) 0x00AB "Left angle quote, guillemot left"
+    &not; (¬) 0x00AC Not sign
+    &shy; (­) 0x00AD Soft hyphen
+    &reg; (®) 0x00AE Registered trademark
+    &macr; (¯) 0x00AF Macron accent
+    &hibar; (¯) 0x00AF Macron accent
+    &deg; (°) 0x00B0 Degree sign
+    &plusmn; (±) 0x00B1 Plus or minus
+    &sup2; (²) 0x00B2 Superscript two
+    &sup3; (³) 0x00B3 Superscript three
+    &acute; (´) 0x00B4 Acute accent
+    &micro; (µ) 0x00B5 Micro sign
+    &para; (¶) 0x00B6 Paragraph sign
+    &middot; (·) 0x00B7 Middle dot
+    &cedil; (¸) 0x00B8 Cedilla
+    &sup1; (¹) 0x00B9 Superscript one
+    &ordm; (º) 0x00BA Masculine ordinal
+    &raquo; (») 0x00BB "Right angle quote, guillemot right"
+    &frac14; (¼) 0x00BC Fraction one-fourth
+    &frac12; (½) 0x00BD Fraction one-half
+    &frac34; (¾) 0x00BE Fraction three-fourths
+    &iquest; (¿) 0x00BF Inverted question mark
+    &Agrave; (À) 0x00C0 "Capital A, grave accent"
+    &Aacute; (Á) 0x00C1 "Capital A, acute accent"
+    &Acirc; (Â) 0x00C2 "Capital A, circumflex"
+    &Atilde; (Ã) 0x00C3 "Capital A, tilde"
+    &Auml; (Ä) 0x00C4 "Capital A, diæresis / umlaut"
+    &Aring; (Å) 0x00C5 "Capital A, ring"
+    &AElig; (Æ) 0x00C6 Capital AE ligature
+    &Ccedil; (Ç) 0x00C7 "Capital C, cedilla"
+    &Egrave; (È) 0x00C8 "Capital E, grave accent"
+    &Eacute; (É) 0x00C9 "Capital E, acute accent"
+    &Ecirc; (Ê) 0x00CA "Capital E, circumflex"
+    &Euml; (Ë) 0x00CB "Capital E, diæresis / umlaut"
+    &Igrave; (Ì) 0x00CC "Capital I, grave accent"
+    &Iacute; (Í) 0x00CD "Capital I, acute accent"
+    &Icirc; (Î) 0x00CE "Capital I, circumflex"
+    &Iuml; (Ï) 0x00CF "Capital I, diæresis / umlaut"
+    &ETH; (Ð) 0x00D0 "Capital Eth, Icelandic"
+    &Ntilde; (Ñ) 0x00D1 "Capital N, tilde"
+    &Ograve; (Ò) 0x00D2 "Capital O, grave accent"
+    &Oacute; (Ó) 0x00D3 "Capital O, acute accent"
+    &Ocirc; (Ô) 0x00D4 "Capital O, circumflex"
+    &Otilde; (Õ) 0x00D5 "Capital O, tilde"
+    &Ouml; (Ö) 0x00D6 "Capital O, diæresis / umlaut"
+    &times; (×) 0x00D7 Multiply sign
+    &Oslash; (Ø) 0x00D8 "Capital O, slash"
+    &Ugrave; (Ù) 0x00D9 "Capital U, grave accent"
+    &Uacute; (Ú) 0x00DA "Capital U, acute accent"
+    &Ucirc; (Û) 0x00DB "Capital U, circumflex"
+    &Uuml; (Ü) 0x00DC "Capital U, diæresis / umlaut"
+    &Yacute; (Ý) 0x00DD "Capital Y, acute accent"
+    &THORN; (Þ) 0x00DE "Capital Thorn, Icelandic"
+    &szlig; (ß) 0x00DF "Small sharp s, German sz"
+    &agrave; (à) 0x00E0 "Small a, grave accent"
+    &aacute; (á) 0x00E1 "Small a, acute accent"
+    &acirc; (â) 0x00E2 "Small a, circumflex"
+    &atilde; (ã) 0x00E3 "Small a, tilde"
+    &auml; (ä) 0x00E4 "Small a, diæresis / umlaut"
+    &aring; (å) 0x00E5 "Small a, ring"
+    &aelig; (æ) 0x00E6 Small ae ligature
+    &ccedil; (ç) 0x00E7 "Small c, cedilla"
+    &egrave; (è) 0x00E8 "Small e, grave accent"
+    &eacute; (é) 0x00E9 "Small e, acute accent"
+    &ecirc; (ê) 0x00EA "Small e, circumflex"
+    &euml; (ë) 0x00EB "Small e, diæresis / umlaut"
+    &igrave; (ì) 0x00EC "Small i, grave accent"
+    &iacute; (í) 0x00ED "Small i, acute accent"
+    &icirc; (î) 0x00EE "Small i, circumflex"
+    &iuml; (ï) 0x00EF "Small i, diæresis / umlaut"
+    &eth; (ð) 0x00F0 "Small eth, Icelandic"
+    &ntilde; (ñ) 0x00F1 "Small n, tilde"
+    &ograve; (ò) 0x00F2 "Small o, grave accent"
+    &oacute; (ó) 0x00F3 "Small o, acute accent"
+    &ocirc; (ô) 0x00F4 "Small o, circumflex"
+    &otilde; (õ) 0x00F5 "Small o, tilde"
+    &ouml; (ö) 0x00F6 "Small o, diæresis / umlaut"
+    &divide; (÷) 0x00F7 Division sign
+    &oslash; (ø) 0x00F8 "Small o, slash"
+    &ugrave; (ù) 0x00F9 "Small u, grave accent"
+    &uacute; (ú) 0x00FA "Small u, acute accent"
+    &ucirc; (û) 0x00FB "Small u, circumflex"
+    &uuml; (ü) 0x00FC "Small u, diæresis / umlaut"
+    &yacute; (ý) 0x00FD "Small y, acute accent"
+    &thorn; (þ) 0x00FE "Small thorn, Icelandic"
+    &yuml; (ÿ) 0x00FF "Small y, diæresis / umlaut"
+    &fnof; (ƒ) 0x0192 "latin small f with hook, =function, =florin, U0192 ISOtech"
+    &Alpha; (Α) 0x0391 "greek capital letter alpha, U0391 "
+    &Beta; (Β) 0x0392 "greek capital letter beta, U0392"
+    &Gamma; (Γ) 0x0393 "greek capital letter gamma, U0393 ISOgrk3"
+    &Delta; (Δ) 0x0394 "greek capital letter delta, U0394 ISOgrk3"
+    &Epsilon; (Ε) 0x0395 "greek capital letter epsilon, U0395"
+    &Zeta; (Ζ) 0x0396 "greek capital letter zeta, U0396"
+    &Eta; (Η) 0x0397 "greek capital letter eta, U0397"
+    &Theta; (Θ) 0x0398 "greek capital letter theta, U0398 ISOgrk3"
+    &Iota; (Ι) 0x0399 "greek capital letter iota, U0399"
+    &Kappa; (Κ) 0x039A "greek capital letter kappa, U039A"
+    &Lambda; (Λ) 0x039B "greek capital letter lambda, U039B ISOgrk3"
+    &Mu; (Μ) 0x039C "greek capital letter mu, U039C"
+    &Nu; (Ν) 0x039D "greek capital letter nu, U039D"
+    &Xi; (Ξ) 0x039E "greek capital letter xi, U039E ISOgrk3"
+    &Omicron; (Ο) 0x039F "greek capital letter omicron, U039F"
+    &Pi; (Π) 0x03A0 "greek capital letter pi, U03A0 ISOgrk3"
+    &Rho; (Ρ) 0x03A1 "greek capital letter rho, U03A1"
+    &Sigma; (Σ) 0x03A3 "greek capital letter sigma, U03A3 ISOgrk3"
+    &Tau; (Τ) 0x03A4 "greek capital letter tau, U03A4"
+    &Upsilon; (Υ) 0x03A5 "greek capital letter upsilon, U03A5 ISOgrk3"
+    &Phi; (Φ) 0x03A6 "greek capital letter phi, U03A6 ISOgrk3"
+    &Chi; (Χ) 0x03A7 "greek capital letter chi, U03A7"
+    &Psi; (Ψ) 0x03A8 "greek capital letter psi, U03A8 ISOgrk3"
+    &Omega; (Ω) 0x03A9 "greek capital letter omega, U03A9 ISOgrk3"
+    &alpha; (a) 0x03B1 "greek small letter alpha, U03B1 ISOgrk3"
+    &beta; (b) 0x03B2 "greek small letter beta, U03B2 ISOgrk3"
+    &gamma; (g) 0x03B3 "greek small letter gamma, U03B3 ISOgrk3"
+    &delta; (d) 0x03B4 "greek small letter delta, U03B4 ISOgrk3"
+    &epsilon; (ε) 0x03B5 "greek small letter epsilon, U03B5 ISOgrk3"
+    &zeta; (ζ) 0x03B6 "greek small letter zeta, U03B6 ISOgrk3"
+    &eta; (η) 0x03B7 "greek small letter eta, U03B7 ISOgrk3"
+    &theta; (θ) 0x03B8 "greek small letter theta, U03B8 ISOgrk3"
+    &iota; (ι) 0x03B9 "greek small letter iota, U03B9 ISOgrk3"
+    &kappa; (κ) 0x03BA "greek small letter kappa, U03BA ISOgrk3"
+    &lambda; (λ) 0x03BB "greek small letter lambda, U03BB ISOgrk3"
+    &mu; (μ) 0x03BC "greek small letter mu, U03BC ISOgrk3"
+    &nu; (ν) 0x03BD "greek small letter nu, U03BD ISOgrk3"
+    &xi; (ξ) 0x03BE "greek small letter xi, U03BE ISOgrk3"
+    &omicron; (ο) 0x03BF "greek small letter omicron, U03BF NEW"
+    &pi; (p) 0x03C0 "greek small letter pi, U03C0 ISOgrk3"
+    &rho; (ρ) 0x03C1 "greek small letter rho, U03C1 ISOgrk3"
+    &sigmaf; (ς) 0x03C2 "greek small letter final sigma, U03C2 ISOgrk3"
+    &sigma; (σ) 0x03C3 "greek small letter sigma, U03C3 ISOgrk3"
+    &tau; (τ) 0x03C4 "greek small letter tau, U03C4 ISOgrk3"
+    &upsilon; (υ) 0x03C5 "greek small letter upsilon, U03C5 ISOgrk3"
+    &phi; (φ) 0x03C6 "greek small letter phi, U03C6 ISOgrk3"
+    &chi; (χ) 0x03C7 "greek small letter chi, U03C7 ISOgrk3"
+    &psi; (ψ) 0x03C8 "greek small letter psi, U03C8 ISOgrk3"
+    &omega; (ω) 0x03C9 "greek small letter omega, U03C9 ISOgrk3"
+    &thetasym; (ϑ) 0x03D1 "greek small letter theta symbol, U03D1 NEW"
+    &upsih; (ϒ) 0x03D2 "greek upsilon with hook symbol, U03D2 NEW"
+    &piv; (ϖ) 0x03D6 "greek pi symbol, U03D6 ISOgrk3"
+    &bull; (•) 0x2022 "bullet, =black small circle, U2022 ISOpub"
+    &hellip; (…) 0x2026 "horizontal ellipsis, =three dot leader, U2026 ISOpub"
+    &prime; (′) 0x2032 "prime, =minutes, =feet, U2032 ISOtech"
+    &Prime; (″) 0x2033 "double prime, =seconds, =inches, U2033 ISOtech"
+    &oline; (‾) 0x203E "overline, =spacing overscore, U203E NEW"
+    &frasl; (⁄) 0x2044 "fraction slash, U2044 NEW"
+    &weierp; (℘) 0x2118 "script capital P, =power set, =Weierstrass p, U2118 ISOamso"
+    &image; (ℑ) 0x2111 "blackletter capital I, =imaginary part, U2111 ISOamso"
+    &real; (ℜ) 0x211C "blackletter capital R, =real part symbol, U211C ISOamso"
+    &trade; (™) 0x2122 "trade mark sign, U2122 ISOnum"
+    &alefsym; (ℵ) 0x2135 "alef symbol, =first transfinite cardinal, U2135 NEW"
+    &larr; (←) 0x2190 "leftward arrow, U2190 ISOnum"
+    &uarr; (↑) 0x2191 "upward arrow, U2191 ISOnum"
+    &rarr; (→) 0x2192 "rightward arrow, U2192 ISOnum"
+    &darr; (↓) 0x2193 "downward arrow, U2193 ISOnum"
+    &harr; (↔) 0x2194 "left right arrow, U2194 ISOamsa"
+    &crarr; (↵) 0x21B5 "downward arrow with corner leftward, =carriage return, U21B5 NEW"
+    &lArr; (⇐) 0x21D0 "leftward double arrow, U21D0 ISOtech"
+    &uArr; (⇑) 0x21D1 "upward double arrow, U21D1 ISOamsa"
+    &rArr; (⇒) 0x21D2 "rightward double arrow, U21D2 ISOtech"
+    &dArr; (⇓) 0x21D3 "downward double arrow, U21D3 ISOamsa"
+    &hArr; (⇔) 0x21D4 "left right double arrow, U21D4 ISOamsa"
+    &forall; (∀) 0x2200 "for all, U2200 ISOtech"
+    &part; (∂) 0x2202 "partial differential, U2202 ISOtech"
+    &exist; (∃) 0x2203 "there exists, U2203 ISOtech"
+    &empty; (∅) 0x2205 "empty set, =null set, =diameter, U2205 ISOamso"
+    &nabla; (∇) 0x2207 "nabla, =backward difference, U2207 ISOtech"
+    &isin; (∈) 0x2208 "element of, U2208 ISOtech"
+    &notin; (∉) 0x2209 "not an element of, U2209 ISOtech"
+    &ni; (∋) 0x220B "contains as member, U220B ISOtech"
+    &prod; (∏) 0x220F "n-ary product, =product sign, U220F ISOamsb"
+    &sum; (∑) 0x2212 "n-ary sumation, U2211 ISOamsb"
+    &minus; (−) 0x2212 "minus sign, U2212 ISOtech"
+    &lowast; (∗) 0x2217 "asterisk operator, U2217 ISOtech"
+    &radic; (√) 0x221A "square root, =radical sign, U221A ISOtech"
+    &prop; (∝) 0x221D "proportional to, U221D ISOtech"
+    &infin; (∞) 0x221E "infinity, U221E ISOtech"
+    &ang; (∠) 0x2220 "angle, U2220 ISOamso"
+    &and; (∧) 0x22A5 "logical and, =wedge, U2227 ISOtech"
+    &or; (∨) 0x22A6 "logical or, =vee, U2228 ISOtech"
+    &cap; (∩) 0x2229 "intersection, =cap, U2229 ISOtech"
+    &cup; (∪) 0x222A "union, =cup, U222A ISOtech"
+    &int; (∫) 0x222B "integral, U222B ISOtech"
+    &there4; (∴) 0x2234 "therefore, U2234 ISOtech"
+    &sim; (∼) 0x223C "tilde operator, =varies with, =similar to, U223C ISOtech"
+    &cong; (≅) 0x2245 "approximately equal to, U2245 ISOtech"
+    &asymp; (≈) 0x2245 "almost equal to, =asymptotic to, U2248 ISOamsr"
+    &ne; (≠) 0x2260 "not equal to, U2260 ISOtech"
+    &equiv; (≡) 0x2261 "identical to, U2261 ISOtech"
+    &le; (≤) 0x2264 "less-than or equal to, U2264 ISOtech"
+    &ge; (≥) 0x2265 "greater-than or equal to, U2265 ISOtech"
+    &sub; (⊂) 0x2282 "subset of, U2282 ISOtech"
+    &sup; (⊃) 0x2283 "superset of, U2283 ISOtech"
+    &nsub; (⊄) 0x2284 "not a subset of, U2284 ISOamsn"
+    &sube; (⊆) 0x2286 "subset of or equal to, U2286 ISOtech"
+    &supe; (⊇) 0x2287 "superset of or equal to, U2287 ISOtech"
+    &oplus; (⊕) 0x2295 "circled plus, =direct sum, U2295 ISOamsb"
+    &otimes; (⊗) 0x2297 "circled times, =vector product, U2297 ISOamsb"
+    &perp; (⊥) 0x22A5 "up tack, =orthogonal to, =perpendicular, U22A5 ISOtech"
+    &sdot; (⋅) 0x22C5 "dot operator, U22C5 ISOamsb"
+    &lceil; (⌈) 0x2308 "left ceiling, =apl upstile, U2308, ISOamsc"
+    &rceil; (⌉) 0x2309 "right ceiling, U2309, ISOamsc"
+    &lfloor; (⌊) 0x230A "left floor, =apl downstile, U230A, ISOamsc"
+    &rfloor; (⌋) 0x230B "right floor, U230B, ISOamsc"
+    &lang; (⟨) 0x2329 "left-pointing angle bracket, =bra, U2329 ISOtech"
+    &rang; (⟩) 0x232A "right-pointing angle bracket, =ket, U232A ISOtech"
+    &loz; (◊) 0x25CA "lozenge, U25CA ISOpub"
+    &spades; (♠) 0x2660 "black spade suit, U2660 ISOpub"
+    &clubs; (♣) 0x2663 "black club suit, =shamrock, U2663 ISOpub"
+    &hearts; (♥) 0x2665 "black heart suit, =valentine, U2665 ISOpub"
+    &diams; (♦) 0x2666 "black diamond suit, U2666 ISOpub"
+    &quot; "("")" 0x0022 "quotation mark, =apl quote, U0022 ISOnum"
+    &amp; (&) 0x0026 "ampersand, U0026 ISOnum"
+    &lt; (<) 0x003C "less-than sign, U003C ISOnum"
+    &gt; (>) 0x003E "greater-than sign, U003E ISOnum"
+    &OElig; (Œ) 0x0152 "latin capital ligature oe, U0152 ISOlat2"
+    &oelig; (œ) 0x0153 "latin small ligature oe, U0153 ISOlat2"
+    &Scaron; (Š) 0x0160 "latin capital letter s with caron, U0160 ISOlat2"
+    &scaron; (š) 0x0161 "latin small letter s with caron, U0161 ISOlat2"
+    &Yuml; (Ÿ) 0x0178 "latin capital letter y with diaeresis, U0178 ISOlat2"
+    &circ; (ˆ) 0x02C6 "modifier letter circumflex accent, U02C6 ISOpub"
+    &tilde; (˜) 0x02DC "small tilde, U02DC ISOdia"
+    &ndash; (–) 0x2013 "en dash, U2013 ISOpub"
+    &mdash; (—) 0x2014 "em dash, U2014 ISOpub"
+    &lsquo; (‘) 0x2018 "left single quotation mark, U2018 ISOnum"
+    &rsquo; (’) 0x2019 "right single quotation mark, U2019 ISOnum"
+    &sbquo; (‚) 0x201A "single low-9 quotation mark, U201A NEW"
+    &ldquo; (“) 0x201C "left double quotation mark, U201C ISOnum"
+    &rdquo; (”) 0x201D "right double quotation mark, U201D ISOnum"
+    &bdquo; („) 0x201E "double low-9 quotation mark, U201E NEW"
+    &dagger; (†) 0x2020 "dagger, U2020 ISOpub"
+    &Dagger; (‡) 0x2021 "double dagger, U2021 ISOpub"
+    &permil; (‰) 0x2030 "per mille sign, U2030 ISOtech"
+    &lsaquo; (‹) 0x2039 "single left-pointing angle quotation mark, U2039 ISO proposed"
+    &rsaquo; (›) 0x203A "single right-pointing angle quotation mark, U203A ISO proposed"
+    &boxh; (─) 0x2500 LIGHT HORIZONTAL
+    &boxv; (│) 0x2502 LIGHT VERTICAL
+    &boxdr; (┌) 0x250C LIGHT DOWN AND RIGHT
+    &boxdl; (┐) 0x2510 LIGHT DOWN AND LEFT
+    &boxur; (└) 0x2514 LIGHT UP AND RIGHT
+    &boxul; (┘) 0x2518 LIGHT UP AND LEFT
+    &boxvr; (├) 0x251C LIGHT VERTICAL AND RIGHT
+    &boxvl; (┤) 0x2524 LIGHT VERTICAL AND LEFT
+    &boxhd; (┬) 0x252C LIGHT DOWN AND HORIZONTAL
+    &boxhu; (┴) 0x2534 LIGHT UP AND HORIZONTAL
+    &boxvh; (┼) 0x253C LIGHT VERTICAL AND HORIZONTAL
+    &ensp; () 0x2002 "en space, U2002 ISOpub"
+    &emsp; () 0x2003 "em space, U2003 ISOpub"
+    &thinsp; () 0x2009 "thin space, U2009 ISOpub"
+    ‌&zwnj; () 0x200C "zero width non-joiner, U200C NEW RFC 2070"
+    ‍&zwj; () 0x200D "zero width joiner, U200D NEW RFC 2070"
+    ‎&lrm; () 0x200E "left-to-right mark, U200E NEW RFC 2070"
+    &rlm; () 0x200F "right-to-left mark, U200F NEW RFC 2070"
