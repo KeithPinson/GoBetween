@@ -16,7 +16,7 @@ import scala.collection.immutable.HashMap
  * @author [[http://keithpinson.com Keith Pinson]]
  */
 object EntityRef {
-  lazy val entityPattern = """&[#\w]\w{1,5};""".r         // eg. &reg;
+  lazy val entityPattern = """&[#\w]\w{1,7};""".r         // eg. &reg;
   lazy val entityDecimalPattern = """&#(\d{1,6});""".r    // eg. &#8224;
   lazy val entityHexPattern = """&#x([A-Fa-f0-9]{1,5});""".r       // eg. &#x2020;
 
