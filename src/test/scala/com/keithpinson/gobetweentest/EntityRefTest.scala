@@ -20,15 +20,43 @@ import org.specs2.ScalaCheck
  */
 class EntityRefTest extends Specification with ScalaCheck { def is =
   "Test of Entity References".title ^
-    new EntityRefTestAllNonSpacing ^
+  new EntityRefTestAllNonSpacing ^
+  new EntityRefTestAllSpacing ^
   end
 }
 
-class EntityRefTestAllNonSpacing extends Specification with ScalaCheck {
-  def is = s2"""
-  All the non-spacing Entity References are Supported $check1
-  """
+class EntityRefTestAllSpacing extends Specification { def is =
+  "&nbsp;" ! {transformEntities("&nbsp;").toCharArray.head.toInt.toHexString.toUpperCase must beEqualTo("A0")} ^
+  "&NonBreakingSpace;" ! {transformEntities("&NonBreakingSpace;").toCharArray.head.toInt.toHexString.toUpperCase must beEqualTo("A0")} ^
+  "&ensp;" ! {transformEntities("&ensp;").toCharArray.head.toInt.toHexString.toUpperCase must beEqualTo("2002")} ^
+  "&emsp;" ! {transformEntities("&emsp;").toCharArray.head.toInt.toHexString.toUpperCase must beEqualTo("2003")} ^
+  "&emsp13;" ! {transformEntities("&emsp13;").toCharArray.head.toInt.toHexString.toUpperCase must beEqualTo("2004")} ^
+  "&emsp14;" ! {transformEntities("&emsp14;").toCharArray.head.toInt.toHexString.toUpperCase must beEqualTo("2005")} ^
+  "&numsp;" ! {transformEntities("&numsp;").toCharArray.head.toInt.toHexString.toUpperCase must beEqualTo("2007")} ^
+  "&puncsp;" ! {transformEntities("&puncsp;").toCharArray.head.toInt.toHexString.toUpperCase must beEqualTo("2008")} ^
+  "&thinsp;" ! {transformEntities("&thinsp;").toCharArray.head.toInt.toHexString.toUpperCase must beEqualTo("2009")} ^
+  "&ThinSpace;" ! {transformEntities("&ThinSpace;").toCharArray.head.toInt.toHexString.toUpperCase must beEqualTo("2009")} ^
+  "&hairsp;" ! {transformEntities("&hairsp;").toCharArray.head.toInt.toHexString.toUpperCase must beEqualTo("200A")} ^
+  "&VeryThinSpace;" ! {transformEntities("&VeryThinSpace;").toCharArray.head.toInt.toHexString.toUpperCase must beEqualTo("200A")} ^
+  "&ZeroWidthSpace;" ! {transformEntities("&ZeroWidthSpace;").toCharArray.head.toInt.toHexString.toUpperCase must beEqualTo("200B")} ^
+  "&NegativeVeryThinSpace;" ! {transformEntities("&NegativeVeryThinSpace;").toCharArray.head.toInt.toHexString.toUpperCase must beEqualTo("200B")} ^
+  "&NegativeThinSpace;" ! {transformEntities("&NegativeThinSpace;").toCharArray.head.toInt.toHexString.toUpperCase must beEqualTo("200B")} ^
+  "&NegativeMediumSpace;" ! {transformEntities("&NegativeMediumSpace;").toCharArray.head.toInt.toHexString.toUpperCase must beEqualTo("200B")} ^
+  "&NegativeThickSpace;" ! {transformEntities("&NegativeThickSpace;").toCharArray.head.toInt.toHexString.toUpperCase must beEqualTo("200B")} ^
+  "&zwnj;" ! {transformEntities("&zwnj;").toCharArray.head.toInt.toHexString.toUpperCase must beEqualTo("200C")} ^
+  "&zwj;" ! {transformEntities("&zwj;").toCharArray.head.toInt.toHexString.toUpperCase must beEqualTo("200D")} ^
+  "&lrm;" ! {transformEntities("&lrm;").toCharArray.head.toInt.toHexString.toUpperCase must beEqualTo("200E")} ^
+  "&rlm;" ! {transformEntities("&rlm;").toCharArray.head.toInt.toHexString.toUpperCase must beEqualTo("200F")} ^
+  end
+}
 
+
+class EntityRefTestAllNonSpacing extends Specification with ScalaCheck { def is =
+  "All the non-spacing Entity References are Supported" ! checkEntities ^
+  end
+
+  // Suppressing Inspections because this statement is so long it is causing odd problems with the IDE
+  @SuppressWarnings(Array("all"))
   val entities = Map(
     "&quot;" -> "\"",
     "&QUOT;" -> "\"",
@@ -2018,43 +2046,6 @@ class EntityRefTestAllNonSpacing extends Specification with ScalaCheck {
 
   val genEntity = Gen.oneOf(entities.toList)
 
-  def check1 = prop { t: (String, String) => transformEntities(t._1) mustEqual t._2 }.setGen(genEntity).set(minTestsOk = entities.size, minSize = entities.size, maxSize = entities.size, workers=3)
+  def checkEntities = prop { t: (String, String) => transformEntities(t._1) mustEqual t._2 }.setGen(genEntity).set(minTestsOk = entities.size, minSize = entities.size, maxSize = entities.size, workers=3)
 }
-
-  /*
-    "&nbsp;" -> " ",
-    "&NonBreakingSpace;" -> " ",
-
-    "&ensp;" -> " ",
-    "&emsp;" -> " ",
-    "&emsp13;" -> " ",
-    "&emsp14;" -> " ",
-    "&numsp;" -> " ",
-    "&puncsp;" -> " ",
-    "&thinsp;" -> " ",
-    "&ThinSpace;" -> " ",
-    "&hairsp;" -> " ",
-    "&VeryThinSpace;" -> " ",
-    "&ZeroWidthSpace;" -> "​",
-    "&NegativeVeryThinSpace;" -> "​",
-    "&NegativeThinSpace;" -> "​",
-    "&NegativeMediumSpace;" -> "​",
-    "&NegativeThickSpace;" -> "​",
-    "&zwnj;" -> "‌",
-    "&zwj;" -> "‍",
-    "&lrm;" -> "‎",
-    "&rlm;" -> "‏",
-  */
-
-  /*
-    "&nbsp;" ! {transformEntities("&nbsp;").toCharArray.head.toInt.toHexString.toUpperCase must beEqualTo("A0")} ^
-    "&ensp;" ! {transformEntities("&ensp;").toCharArray.head.toInt.toHexString.toUpperCase must beEqualTo("2002")} ^
-    "&emsp;" ! {transformEntities("&emsp;").toCharArray.head.toInt.toHexString.toUpperCase must beEqualTo("2003")} ^
-    "&thinsp;" ! {transformEntities("&thinsp;").toCharArray.head.toInt.toHexString.toUpperCase must beEqualTo("2009")} ^
-    "&zwnj;" ! {transformEntities("&zwnj;").toCharArray.head.toInt.toHexString.toUpperCase must beEqualTo("200C")} ^
-    "&zwj;" ! {transformEntities("&zwj;").toCharArray.head.toInt.toHexString.toUpperCase must beEqualTo("200D")} ^
-    "&lrm;" ! {transformEntities("&lrm;").toCharArray.head.toInt.toHexString.toUpperCase must beEqualTo("200E")} ^
-    "&rlm;" ! {transformEntities("&rlm;").toCharArray.head.toInt.toHexString.toUpperCase must beEqualTo("200F")} ^
-  end
-  */
 
