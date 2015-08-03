@@ -14,7 +14,6 @@ import org.junit.runner.RunWith
 
 class GoBetweenTest extends SpecificationWithJUnit { def is = sequential ^
   "The Go Between Structure".title ^
-  "Tests pending" ! success ^
-//  new `Placeholder for a test` ^
+  new EntityRefTest ^
   end
 }
