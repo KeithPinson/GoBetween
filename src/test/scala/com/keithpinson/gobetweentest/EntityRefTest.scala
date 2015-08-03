@@ -22,10 +22,40 @@ class EntityRefTest extends Specification with ScalaCheck { def is =
   "Test of Entity References".title ^
   new EntityRefTestAllNonSpacing ^
   new EntityRefTestAllSpacing ^
+  new EntityRefTestUndefined ^
+  new EntityRefTestHexadecimal ^
+  new EntityRefTestDecimal
   end
 }
 
+class EntityRefTestDecimal extends Specification with ScalaCheck { def is = s2"""
+  Decimal Unicode entity references are supported $checkDecimal
+  and entity references out of range pass through $checkDecimalOutOfRange
+  """
+
+  def checkDecimal = failure
+  def checkDecimalOutOfRange = failure
+}
+
+class EntityRefTestHexadecimal extends Specification with ScalaCheck { def is = s2"""
+  Hexadecimal Unicode entity references are supported $checkBasePlane
+  and supplemental planes are supported $checkSupplementalPlan
+  """
+
+  // Check entity references like, &#x0081;
+  def checkBasePlane = failure
+  def checkSupplementalPlan = failure
+}
+
+class EntityRefTestUndefined extends Specification with ScalaCheck { def is = s2"""
+  An undefined Entity Reference $checkUndefined
+  """
+
+  def checkUndefined = failure
+}
+
 class EntityRefTestAllSpacing extends Specification { def is =
+  "All the \"space\" Entity References are Supported".title ^
   "&nbsp;" ! {transformEntities("&nbsp;").toCharArray.head.toInt.toHexString.toUpperCase must beEqualTo("A0")} ^
   "&NonBreakingSpace;" ! {transformEntities("&NonBreakingSpace;").toCharArray.head.toInt.toHexString.toUpperCase must beEqualTo("A0")} ^
   "&ensp;" ! {transformEntities("&ensp;").toCharArray.head.toInt.toHexString.toUpperCase must beEqualTo("2002")} ^
