@@ -23,35 +23,46 @@ class EntityRefTest extends Specification with ScalaCheck { def is =
   new EntityRefTestAllNonSpacing ^
   new EntityRefTestAllSpacing ^
   new EntityRefTestUndefined ^
-  new EntityRefTestHexadecimal ^
-  new EntityRefTestDecimal
+//  new EntityRefTestHexadecimal ^
+//  new EntityRefTestDecimal ^
   end
 }
 
 class EntityRefTestDecimal extends Specification with ScalaCheck { def is = s2"""
   Decimal Unicode entity references are supported $checkDecimal
-  and entity references out of range pass through $checkDecimalOutOfRange
+  and entity references out of range are not transformed $checkDecimalOutOfRange
+  and negative numbers are not transformed $verifyNegativeNotTransformed
   """
 
   def checkDecimal = failure
   def checkDecimalOutOfRange = failure
+  def verifyNegativeNotTransformed = failure
 }
 
 class EntityRefTestHexadecimal extends Specification with ScalaCheck { def is = s2"""
   Hexadecimal Unicode entity references are supported $checkBasePlane
   and supplemental planes are supported $checkSupplementalPlan
+  and entity references out of range aree not transformed $checkOutOfRange
+  and negative numbers are not transformed $verifyNegativeNotTransformed
   """
 
   // Check entity references like, &#x0081;
   def checkBasePlane = failure
   def checkSupplementalPlan = failure
+  def checkOutOfRange = failure
+  def verifyNegativeNotTransformed = failure
 }
 
 class EntityRefTestUndefined extends Specification with ScalaCheck { def is = s2"""
-  An undefined Entity Reference $checkUndefined
+  An undefined Entity Reference is not transformed $checkUndefined
   """
 
-  def checkUndefined = failure
+  def genBadEntity : Gen[String] = for {
+    n <- Gen.choose(6,9)
+    c <- Gen.alphaChar
+  } yield "&" + c*4 + n + ";"
+
+  def checkUndefined = prop( (e:String) => transformEntities(e) mustEqual e).setGen(genBadEntity)
 }
 
 class EntityRefTestAllSpacing extends Specification { def is =
