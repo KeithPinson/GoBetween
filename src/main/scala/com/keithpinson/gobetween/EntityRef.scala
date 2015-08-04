@@ -25,11 +25,11 @@ object EntityRef {
   lazy val entityDecimalPattern = """&#(\d{1,8});""".r    // eg. &#8224;
   lazy val entityHexPattern = """&#x([A-Fa-f0-9]{1,6});""".r       // eg. &#x2020;
 
-//  1D538
   /**
    * Scala, as of v2.11, does not support Supplementary Planes in Unicode, which means the
-   * "\uxxxx" notation cannot have a 5th hexadecimal character.  But still unicode characters
-   * can be displayed by transforming the unicode character to a so-called surrogate pair.
+   * "&backslash;uxxxx" notation cannot have a 5th hexadecimal character.  But still unicode characters
+   * can be displayed by transforming the unicode character to a so-called surrogate pair, which will
+   * be properly interpreted as a single unicode character in Scala.
    *
    * @param ustr Unicode value in hexadecimal, eg. "10437" for the unicode character U+10437.
    * @return The surrogate pair, eg. "\uD801\uDC37"
