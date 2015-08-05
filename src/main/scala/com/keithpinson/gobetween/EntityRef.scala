@@ -21,9 +21,9 @@ import scala.util.matching.Regex.Match
  * @author [[http://keithpinson.com Keith Pinson]]
  */
 object EntityRef {
-  lazy val entityPattern = """&[#\w]\w{1,30};""".r         // eg. &reg;
-  lazy val entityDecimalPattern = """&#(\d{1,8});""".r    // eg. &#8224;
-  lazy val entityHexPattern = """&#x([A-Fa-f0-9]{1,6});""".r       // eg. &#x2020;
+  lazy val entityPattern = """&[#\w]\w{1,30};""".r            // eg. &reg;
+  lazy val entityDecimalPattern = """&#(\d{1,8});""".r        // eg. &#8224;
+  lazy val entityHexPattern = """&#x([A-Fa-f0-9]{1,6});""".r  // eg. &#x2020;
 
   /**
    * Scala, as of v2.11, does not support Supplementary Planes in Unicode, which means the
@@ -31,42 +31,32 @@ object EntityRef {
    * can be displayed by transforming the unicode character to a so-called surrogate pair, which will
    * be properly interpreted as a single unicode character in Scala.
    *
-   * @param ustr Unicode value in hexadecimal, eg. "10437" for the unicode character U+10437.
-   * @return The surrogate pair, eg. "\uD801\uDC37"
+   * @param u Unicode value, use something like Integer.parseInt("DC12",16) to get the Int
+   * @return The surrogate pair, eg. "\uD801\uDC37", or a single character string, eg "A"
    */
-  def unicodeToUtf16( ustr:String ) : String = {
-
-    /*
-     Subtract 0x10000 from 0x10437. The result is 0x00437, 0000 0000 0100 0011 0111.
-     Split this into the high 10-bit value and the low 10-bit value: 0000000001 and 0000110111.
-     Add 0xD800 to the high value to form the high surrogate: 0xD800 + 0x0001 = 0xD801.
-     Add 0xDC00 to the low value to form the low surrogate: 0xDC00 + 0x0037 = 0xDC37.
-     */
-
-    var u = 0
-
-    try {
-      u = Integer.parseInt(ustr,16)
-    }
-    catch {
-      case e: NumberFormatException => throw e // Let this fail at this level
-      case e: Throwable => throw e
-    }
-
-    if( u > Character.MAX_VALUE ) {
-      // Then this is a supplementary plane unicode range...
-      val v = Integer.parseInt(ustr, 16) - Character.MIN_SUPPLEMENTARY_CODE_POINT
+  def unicodeToUtf16( u:Int ) : String = { u match {
+    case 9 => "\t"
+    case 10 => "\n"
+    case 13 => "\r"
+    case s if s > Character.MAX_VALUE =>
+      /* Then this is in the supplementary plane unicode range.
+       *
+       * Example:
+       *
+       * Subtract 0x10000 from 0x10437. The result is 0x00437, 0000 0000 0100 0011 0111.
+       * Split this into the high 10-bit value and the low 10-bit value: 0000000001 and 0000110111.
+       * Add 0xD800 to the high value to form the high surrogate: 0xD800 + 0x0001 = 0xD801.
+       * Add 0xDC00 to the low value to form the low surrogate: 0xDC00 + 0x0037 = 0xDC37.
+       */
+      val v = s - Character.MIN_SUPPLEMENTARY_CODE_POINT
 
       val hi = Character.MIN_HIGH_SURROGATE + (v >>> 10)
       val lo = Character.MIN_LOW_SURROGATE + (v & Integer.parseInt("1" * 10, 2))
 
       hi.toChar.toString + lo.toChar.toString
-    }
-    else if( u > 0 ) {
-      u.toChar.toString
-    }
-    else {
-      ""
+
+    case a if a >= 32 => a.toChar.toString
+    case _ => ""
     }
   }
 
@@ -77,21 +67,9 @@ object EntityRef {
    */
   def transformEntities( s:String ) : String = {
     def transform( e:String ) : String = e match {
-      case entityDecimalPattern(d) => Integer.parseInt(d,10) match {
-        case 9 => "\t"
-        case 10 => "\n"
-        case 13 => "\r"
-        case a if a >= 32 => a.toChar.toString
-        case _ => ""
-      }
-      case entityHexPattern(x) => Integer.parseInt(x,16) match {
-        case 9 => "\t"
-        case 10 => "\n"
-        case 13 => "\r"
-        case a if a >= 32 => a.toChar.toString
-        case _ => ""
-      }
-      case t => entityMap.get(t).map(a=>unicodeToUtf16(a)).getOrElse(t)
+      case entityDecimalPattern(d) => unicodeToUtf16(Integer.parseInt(d,10))
+      case entityHexPattern(x) => unicodeToUtf16(Integer.parseInt(x,16))
+      case t => entityMap.get(t).map(a=>unicodeToUtf16( Integer.parseInt(a,16) )).getOrElse(t)
     }
     entityPattern.replaceAllIn(s, e => transform(e.matched))
   }
