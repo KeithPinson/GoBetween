@@ -125,12 +125,20 @@ class EntityRefTestAllSpacing extends Specification { def is =
 }
 
 
+/*
+ * Note: The entities Map is so long that IntelliJ is going into some sort of vapor lock.  Switching
+ * between tabs seems to be the trigger.  Sometimes a lock file is left down in the .gradle folder.
+ * Commenting out most of the entities restores sanity; strangely uncommenting them doesn't trigger
+ * the lockup immediately. --KIP IntelliJ IDEA 14.1.4
+ */
+
+
+// Suppressing Inspections because this statement is so long it is causing odd problems with the IDE
+@SuppressWarnings(Array("all"))
 class EntityRefTestAllNonSpacing extends Specification with ScalaCheck { def is =
   "All the non-spacing Entity References are Supported" ! checkEntities ^
   end
 
-  // Suppressing Inspections because this statement is so long it is causing odd problems with the IDE
-  @SuppressWarnings(Array("all"))
   val entities = Map(
     "&quot;" -> "\"",
     "&QUOT;" -> "\"",
