@@ -10,20 +10,20 @@ import scala.util.matching.Regex.Match
  */
 
 /**
- * This class supports conversion of entity references, for example &amp;reg; would become unicode U00AE.
+ * This class supports conversion of entity references, for example &amp;reg; would become unicode U00AE (&reg;).
  *
  * Entity references come from the HTML and XML specifications. At one time entity references only
- * transformed to 16-bits, when UTF-16 was just 16-bits. Now UTF-16 (Specifications after HTML4 began using the
- * supplemental planes of Unicode, eg. Double Strike Capital A, &Aopf; is unicode U0001 UD538.
+ * transformed to 16-bits, when UTF-16 was just 16-bits. Now UTF-16 (Specifications after HTML4) uses the
+ * supplemental planes of Unicode, eg. Double Strike Capital A, &Aopf; is 5-digit unicode U+1D538.
  *
  * @see [[com.keithpinson.gobetween.TermsAndConditions]]<br/>
  *
  * @author [[http://keithpinson.com Keith Pinson]]
  */
 object EntityRef {
-  lazy val entityPattern = """&[#\w]\w{1,30};""".r            // eg. &reg;
-  lazy val entityDecimalPattern = """&#(\d{1,8});""".r        // eg. &#8224;
-  lazy val entityHexPattern = """&#x([A-Fa-f0-9]{1,6});""".r  // eg. &#x2020;
+  private lazy val entityPattern = """&[#\w]\w{1,30};""".r            // eg. &reg;
+  private lazy val entityDecimalPattern = """&#(\d{1,8});""".r        // eg. &#8224;
+  private lazy val entityHexPattern = """&#x([A-Fa-f0-9]{1,6});""".r  // eg. &#x2020;
 
   /**
    * Scala, as of v2.11, does not support Supplementary Planes in Unicode, which means the
@@ -34,7 +34,7 @@ object EntityRef {
    * @param u Unicode value, use something like Integer.parseInt("DC12",16) to get the Int
    * @return The surrogate pair, eg. "\uD801\uDC37", or a single character string, eg "A"
    */
-  def unicodeToUtf16( u:Int ) : String = { u match {
+  private def unicodeToUtf16( u:Int ) : String = { u match {
     case 9 => "\t"
     case 10 => "\n"
     case 13 => "\r"
@@ -61,9 +61,13 @@ object EntityRef {
   }
 
   /**
-   * Transform something like "&amp;reg;" to "&reg;"
+   * Transform entities, eg; &amp;copy; within a string into it's unicode character
    *
    * @param s is the string to be transformed
+   *
+   * @example
+   *
+   * transformEntities("3 &amp;frac12; weeks")  // Results in the the string "3 ½ weeks"
    */
   def transformEntities( s:String ) : String = {
     def transform( e:String ) : String = e match {
@@ -74,7 +78,8 @@ object EntityRef {
     entityPattern.replaceAllIn(s, e => transform(e.matched))
   }
 
-  lazy val entityMap : HashMap[String,String] = HashMap(
+  // Keeping this big thing at the bottom of the file
+  private lazy val entityMap : HashMap[String,String] = HashMap(
     "&quot;" -> "00022",                               // "QUOTATION MARK"
     "&QUOT;" -> "00022",                               // "QUOTATION MARK"
     "&amp;" -> "00026",                                // "AMPERSAND"
@@ -2073,4 +2078,3 @@ object EntityRef {
   )
 }
 
-// Keeping this big thing at the bottom of the file
