@@ -24,7 +24,7 @@ class EntityRefTest extends Specification with ScalaCheck { def is =
   new EntityRefTestAllSpacing ^
   new EntityRefTestUndefined ^
   new EntityRefTestHexadecimal ^
-//  new EntityRefTestDecimal ^
+  new EntityRefTestDecimal ^
   end
 }
 
@@ -34,9 +34,14 @@ class EntityRefTestDecimal extends Specification with ScalaCheck { def is = s2""
   and negative numbers are not transformed $verifyNegativeNotTransformed
   """
 
-  def checkDecimal = failure
-  def checkDecimalOutOfRange = failure
-  def verifyNegativeNotTransformed = failure
+  def genDecimalEntity : Gen[String] = for {
+    n <- Gen.chooseNum(32,Character.MAX_CODE_POINT)
+  } yield "&#" + n + ";"
+
+  def checkDecimal = prop( (e:String) => transformEntities(e) mustNotEqual e).setGen(genDecimalEntity)
+
+  def checkDecimalOutOfRange = transformEntities( "&#25;") mustEqual ""
+  def verifyNegativeNotTransformed = transformEntities( "&#-25;") mustEqual "&#-25;"
 }
 
 class EntityRefTestHexadecimal extends Specification with ScalaCheck { def is = s2"""
