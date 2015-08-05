@@ -23,7 +23,7 @@ class EntityRefTest extends Specification with ScalaCheck { def is =
   new EntityRefTestAllNonSpacing ^
   new EntityRefTestAllSpacing ^
   new EntityRefTestUndefined ^
-//  new EntityRefTestHexadecimal ^
+  new EntityRefTestHexadecimal ^
 //  new EntityRefTestDecimal ^
   end
 }
@@ -40,15 +40,48 @@ class EntityRefTestDecimal extends Specification with ScalaCheck { def is = s2""
 }
 
 class EntityRefTestHexadecimal extends Specification with ScalaCheck { def is = s2"""
-  Hexadecimal Unicode entity references are supported $checkBasePlane
-  and supplemental planes are supported $checkSupplementalPlan
-  and entity references out of range aree not transformed $checkOutOfRange
-  and negative numbers are not transformed $verifyNegativeNotTransformed
+  Hexadecimal Unicode entity references will be transformed to a Char or null $checkBasePlane
+  and supplemental planes are supported $checkSupplementalPlane
+  and tab, &#x9; is transformed ${transformEntities("&#x9;") must beEqualTo("\t")}
+  and linefeed, &#xA; is transformed ${transformEntities("&#xA;") must beEqualTo("\n")}
+  and carriage-return, &#xD; is transformed ${transformEntities("&#xD;") must beEqualTo("\r")}
+  and bell, &#x7; is not transformed ${transformEntities("&#x7;") must beEqualTo("")}
   """
 
-  // Check entity references like, &#x0081;
-  def checkBasePlane = failure
-  def checkSupplementalPlan = failure
+  def hexString( len:Int ) = {
+      // Ignore lower-case here to keep the alpha characters from doubling their odds of being chosen
+      def isHex(c: Char) = (c >= 'A' && c <= 'F') || (c >= '0' && c <= '9')
+
+      val isUpper = scala.util.Random.nextBoolean()
+      def toCase(c: Char, shouldBeUpper: Boolean) = c match {
+        case x if !x.isLetter => x
+        case x if shouldBeUpper => x.toUpper
+        case x => x.toLower
+      }
+
+      val hh = Iterator continually toCase(scala.util.Random.nextPrintableChar(), isUpper) filter isHex
+
+      hh.take(len).mkString
+  }
+
+  def genHexString : Gen[String] = hexString(10)
+
+  def genBasePlaneEntity : Gen[String] = for {
+    len <- Gen.oneOf(2,3,4)
+    s <- genHexString
+  } yield "&#x" + s.take(len) + ";"
+
+  // Check entity references like, &#x0081; where the numbers may or may not have leading zeros
+  def checkBasePlane = prop( (e:String) => transformEntities(e).length must be_<=(1) ).setGen(genBasePlaneEntity)
+
+  def genSupplementalPlaneEntity : Gen[String] = for {
+    s <- Gen.oneOf( 1 to 9 )
+    b <- genHexString
+  } yield "&#x" + s + b.take(4) + ";"
+
+  // Supplemental Planes are five digits hex like, &#x12020; where the leading digit is 1
+  def checkSupplementalPlane = prop( (e:String) => transformEntities(e) must haveLength(2) ).setGen(genSupplementalPlaneEntity)
+
   def checkOutOfRange = failure
   def verifyNegativeNotTransformed = failure
 }
