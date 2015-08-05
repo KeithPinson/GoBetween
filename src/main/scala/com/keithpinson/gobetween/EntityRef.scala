@@ -38,7 +38,8 @@ object EntityRef {
     case 9 => "\t"
     case 10 => "\n"
     case 13 => "\r"
-    case s if s > Character.MAX_VALUE =>
+    case a if a > Character.MAX_CODE_POINT => ""
+    case a if a > Character.MAX_VALUE =>
       /* Then this is in the supplementary plane unicode range.
        *
        * Example:
@@ -48,7 +49,7 @@ object EntityRef {
        * Add 0xD800 to the high value to form the high surrogate: 0xD800 + 0x0001 = 0xD801.
        * Add 0xDC00 to the low value to form the low surrogate: 0xDC00 + 0x0037 = 0xDC37.
        */
-      val v = s - Character.MIN_SUPPLEMENTARY_CODE_POINT
+      val v = a - Character.MIN_SUPPLEMENTARY_CODE_POINT
 
       val hi = Character.MIN_HIGH_SURROGATE + (v >>> 10)
       val lo = Character.MIN_LOW_SURROGATE + (v & Integer.parseInt("1" * 10, 2))
