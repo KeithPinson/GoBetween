@@ -1,0 +1,160 @@
+#! dno -version 0.1 -markup khand -tab 4
+
+// These requirements were drawn from the CommonMark Spec v0.21
+
+[[Markdown Document]]
+Any sequence of characters is a valid document[[Characters]]
+
+[[Characters]]
+A character is a unicode code point.
+No encoding is specified.
+
+[[Lines]]
+A line is a sequence of zero or more characters followed by an end of line[End of Line]]
+
+[[End of Line]]
+An end of line is one of the following:
+    An end of File
+    A newline (U+000A)
+    A carriage return (U+000D)
+    Or, a carriage return + newline (U+000D,U+000A)
+
+[[Blank Line]]
+A line containing no characters, or a line containing only spaces (U+0020) or tabs (U+0009), is called a blank line.
+
+[[Whitespace Character]]
+A whitespace character is either:
+    space (U+0020)
+    tab (U+0009)
+    newline (U+000A)
+    line tabulation (U+000B)
+    form feed (U+000C)
+    carriage return (U+000D)
+
+[[Whitespace]]
+Whitespace is a sequence of one or more whitespace characters[[Whitespace Character]]
+
+[[Unicode Whitespace Character]]
+A unicode whitespace character is any code point in the unicode Zs class, or a regular whitespace character[[Whitespace Character]]
+
+[[Unicode Whitespace]]
+Unicode whitespace is a sequence of one or more unicode whitespace characters[[Unicode Whitespace Character]]
+
+[[Space]]
+A space is U+0020.
+
+[[Non Whitespace Character]]
+A non-whitespace character is any character that is not a whitespace character[[Whitespace Character]]
+
+[[ASCII Punctuation Character]]
+An ASCII punctuation character is any one of the ASCII characters:
+    (!, ", #, $, %, &, ', (, ), *, +, ,, -, ., /, :, ;, <, =, >, ?, @, [, \, ], ^, _, `, {, |, }, ~)
+
+[[Punctuation Character]]
+A punctuation character is an ASCII punctuation character or anything in the unicode classes Pc, Pd, Pe, Pf, Pi, Po, or Ps.
+
+[[Tabs]]
+Tabs in lines are not expanded to spaces
+
+[[Indentation]]
+When evaluating levels of indentation, a tab should behave as if replaced by 4 spaces
+
+[[Unicode Zero]]
+For security reasons, the Unicode character U+0000 must be replaced with the replacement character (U+FFFD)
+
+[[Blocks]]
+Conceptually a documents consists of a chain of block elements.
+The block elements are:
+    Paragraphs
+    Block Quotes
+    Lists
+    List Items
+    Headers
+    Horizontal Rules[[Horizontal Rule]]
+    Code Blocks
+
+[[Inlines]]
+Embedded in a line may be an inline element.
+The inline elements are:
+    Content-text
+    Links
+    Emphasized test
+    Images
+    Code
+
+[[Precedence]]
+Block elements take precedence over inline elements.
+The following markup:
+    {{{
+    - `one
+    - two`
+    }}}
+
+    should result generate the following html:
+    {{{
+    <ul>
+    <li>`one</li>
+    <li>two`</li>
+    </ul>
+    }}}
+
+[[Sub-Blocks]]
+Blocks that can be nested in another block are referred to as a sub-block
+A sub-block can never span across its parent block boundary
+
+[[Underlined Header]]
+
+An underlined header takes precedence over a horizontal rule[[Horizontal Rule]]
+
+
+[[Horizontal Rule]]
+A horizontal rule cannot contain a sub-block
+A horizontal rule takes precedence over a list item
+A horizontal rule take precedence over a paragraph
+It consists of a single line
+It does not need to be preceded nor followed by a blank line
+The line can have upto three leading whitespace characters[[Whitespace Character]]
+It cannot have 4 or more leading whitespace characters[[Whitespace Character]]
+It is identified by either of the three or more characters:
+    *** (asterisks, U+002A)
+    --- (hyphens, U+002D)
+    ___ (under-bars, U+005F)
+Any number of spaces can be inserted between or after the three or more characters
+The three or more characters must all be the same, no mixing
+Any other characters are besides space is not allowed
+It should generate html: {{{<hr/>}}}
+
+[[Headers]]
+A header is a single line of characters
+It can be identified in one of two ways, either:
+    By hash (#) characters, as an ATX Header[[ATX Header]]
+    Or, by a following line of (-) or (=), as Setext Header [[Setext Header]]
+Headers are inlines[[Inlines]]
+Leading and following whitespace characters are trimmed
+It cannot be a sub-block of any other block
+
+[[ATX Header]]
+An ATX header is a header preceded by 1 to 6 hash characters (#) and a space
+It can be preceded by up 3 whitespace characters
+It can be followed by any number of whitespace characters
+It can be followed by any number of hash (#) characters which are preceded by a space
+Only hash (#) characters or spaces can surround the header characters
+If two or more leading hash characters are used, they must be touching with no spaces between
+It should generate the html header tag where the number of hashes is the heading level
+An ATX Header can be empty, if so no spaces are required after or before the preceding or following hashes (#)
+An empty header can have any number of whitespace characters including none if there is no following hash (#)
+It is of high precedent than a paragraph
+
+[[Setext Header]]
+A Setext Header is a header followed on the next line by contiguous hyphen (-) or equal characters (=)[[Setext Underline]]
+The inline text of a Setext header cannot be a blank line
+It is a lower precedent than a paragraph
+
+[[Setext Underline]]
+Equals (=) generate html, <h1> tags
+Hyphens (-) generate html, <h2> tags
+Hyphens and equal signs cannot be mixed
+Spaces or any other character cannot intersperse the hyphens or equal signs
+One to a max of 120 hyphens or equal signs can be used
+It can be preceded by up 3 whitespace characters
+It can be followed by any number of whitespace characters
