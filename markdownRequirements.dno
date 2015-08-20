@@ -1,6 +1,7 @@
 #! dno -version 0.1 -markup khand -tab 4
 
-// These requirements were drawn from the CommonMark Spec v0.21
+// These requirements were drawn from the CommonMark Spec v0.21 however they diverge significantly
+// with regards to which html tags can be used and on some other minor issues.
 
 [[Markdown Document]]
 Any sequence of characters is a valid document[[Characters]]
@@ -158,3 +159,157 @@ Spaces or any other character cannot intersperse the hyphens or equal signs
 One to a max of 120 hyphens or equal signs can be used
 It can be preceded by up 3 whitespace characters
 It can be followed by any number of whitespace characters
+
+[[Code Blocks]]
+Code is characters or lines of characters
+It can be identfied in one of two ways, either:
+  By indenting[[Indented Code Block Lines]]
+  Or, by fencing[[Fenced Code Block]]
+Code blocks are not inlines and require no further processing
+Code blocks should be transformed to html as the code block surrounded by the <pre> and <code> tags
+
+[[Indented Code Block Lines]]
+Indented code block lines are identified by 4 whitespace characters or a tab character
+The leading 4 whitespace characters or the tab are not included in the code block
+A code block may contain leading whitespace characters
+Adjoining indented code block lines are all a part of the same code block
+A blank line is considered part of a code block if it is surrounded by code block lines
+Paragraphs are of lower precedence
+Lists are of higher precedence
+
+[[Fenced Code Block]]
+A code block fence is identified by triple backticks (```) or tildes (~~~) surrounding the code
+Additional backticks (`) or tildes (~) can adjoin the triples and will be considered part of the fence not the code
+The closing triple and its additional backticks (`) or tildes (~) must in at least number the opening fence
+Backticks (`) or tildes (~) in the closing fence beyond the number in the opening fence are valid and considered as part of the closing fence
+The opening and closing fence can have upto three leading whitespace characters
+The number leading white spaces of the opening fence is assumed to be the indentation of the code block and that number of leading spaces will be removed from each code block line
+Whatespace cannot be interleaved between the triples
+If no closing fence exists the code block is assumed to continue until the end of the document
+A fenced code block can have an info string[[Code Info String]]
+
+[[Code Info String]]
+The first word following the opening fence will be used to create a "class" attribute of the html <code> tag
+The "class" attribute be set equal to the string "language-" with the word appended to it, eg. class="language-ruby"
+If the opening fence begins a line all characters on that line are assumed to be a part of the code info string
+If a space follows the opening fence the word that follows if one exists is used to compose the class attribute
+If a space follows the opening fence and there are characters beyond the first word and the fence begins a line then the addional characters are considered part of the fence and ignored
+If no space follows then the characters following the last backtick (`) or tilde (~) until the end of line or whitespace is used to compose the class attribute
+If the opening fence does not begin a line then the code info string can only consist of a single word and must adjoin the opening fence with no spaces
+
+[[HTML Markup]]
+Html Markup may be copied and pasted into a document, so all HTML Markup should be processed
+For the purposes of markdown we are only concerned with a subset of html, but still we must be able to identify the following declarations:
+    Html comment[[HTML Comment]]
+    Xml Declaration[[XML Declaration]]
+    Doctype Declaration[[Doctype Declaration]]
+    Character Data[[Character Data]]
+    Html Tag[[HTML Tag]]
+Code blocks have a higher precedence
+
+[[HTML Comment]]
+An html comment is preserved and is inserted into the resulting document un altered
+A Html comment has an opening sequence of of 4 characters, <!--
+It can be followed by any characters including newlines and carriage returns
+It is terminated by 3 characters, -->
+
+[[XML Declaration]]
+An Xml declaration is identified and then ignored and dropped from the generated document
+An Xml declration starts with 2 characters, <?
+It is followed by characters including newlines and carriage returns
+It is terminated by 2 characters, ?>
+
+[[Doctype Declaration]]
+A doctype declaration is identified and the ignored and dropped from the generated document
+It starts with 2 characters, <!
+It is supposed to be the first declaration in an html file, but we will identify it if it is misplaced
+It can contain any characters including carriage return and newline
+It is terminated by a single greater-than (>)
+
+[[Character Data]]
+Character Data is typically used with Xml and scripts, it is to be ignored and dropped from the generated document
+It starts with the following sequence of 9 characters, <![CDATA[
+It can contain any character including newlines and carriage returns
+It is terminated with the just 3 characters, ]]>
+
+[[Html Tag]]
+All Html tags can be identified by
+    A tag name[[Tag Name]]
+    An opening tag[[Opening Tag]]
+    A closing tag[[Closing Tag]]
+    Or, a standalone tag[[Standalone Tag]]
+Any accepted tag including the characters between an opening and closing tag are passed to the generated document
+Any tags that are not acceptable including characters between the opening and closing tags are ignored and dropped from the generated document
+
+[[Tag Name]]
+A tag name is not case sensitive
+It must begin with an alpha character
+It can be upto 126 characters in length
+After the first character any character can be alphanumeric or under-bar (_), not space
+A subset of tag names are valid for Markdown[[Accepted Tag Names]]
+
+[[Opening Tag]]
+An opening tag consists of less-than (<) character, a tag name, optionally some attributes, and then an ending greater-than (>) character
+
+[[Closing Tag]]
+A closing tag has a matching tag name, it consists of less-than (<), a slash (/), the tag name, optionally whitespace, and a greater-than (>) character
+
+[[Standalone Tag]]
+A standalone tag consists of a less-than (<) character, a tag name, optionally whitespace, and a greater-than (>) character
+
+[[Accepted Tag Names]]
+Only the following list of names are acceptable (they are not case-sensitive)
+    address
+    article
+    aside
+    blockquote
+    caption
+    center
+    col
+    colgroup
+    dd
+    details
+    dialog
+    dir
+    div
+    dl
+    dt
+    fieldset
+    figcaption
+    figure
+    footer
+    form
+    frame
+    frameset
+    h1
+    header
+    hr
+    legend
+    li
+    link
+    main
+    menu
+    menuitem
+    nav
+    noframes
+    ol
+    optgroup
+    option
+    p
+    param
+    pre
+    section
+    source
+    summary
+    table
+    tbody
+    td
+    tfoot
+    th
+    thead
+    title
+    tr
+    track
+    ul
+The "title" tag is child element of the head element
+The other tags are children or siblings of the body element
