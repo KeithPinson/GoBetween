@@ -66,13 +66,14 @@ For security reasons, the Unicode character U+0000 must be replaced with the rep
 [[Blocks]]
 Conceptually a documents consists of a chain of block elements.
 The block elements are:
-    Paragraphs
-    Block Quotes
-    Lists
-    List Items
-    Headers
+    Paragraphs[[Paragraph]]
+    Blank Lines[[Blank Line]]
+    Block Quotes[[Block Quote]]
+    Lists[[List]]
+    List Items[[List Item]]
+    Headers[[Header]]
     Horizontal Rules[[Horizontal Rule]]
-    Code Blocks
+    Code Blocks[[Code Block]]
 
 [[Inlines]]
 Embedded in a line may be an inline element.
@@ -84,29 +85,23 @@ The inline elements are:
     Code
 
 [[Precedence]]
-Block elements take precedence over inline elements.
-The following markup:
-    {{{
-    - `one
-    - two`
-    }}}
-
-    should result generate the following html:
-    {{{
-    <ul>
-    <li>`one</li>
-    <li>two`</li>
-    </ul>
-    }}}
+Block elements are of higher precedence than inline elements.
+Of the Block elements the order of precedence, starting with the highest first:
+    1. Fenced Code Block
+    2. List Item
+    3. Indented Code Block
+    4. HTML
+    5. Block Quotes
+    6. Setext Header
+    7. Horizontal Rule
+    8. ATX Header
+    9. List
+    10. Blank Line
+    11. Paragraph
 
 [[Sub-Blocks]]
 Blocks that can be nested in another block are referred to as a sub-block
 A sub-block can never span across its parent block boundary
-
-[[Underlined Header]]
-
-An underlined header takes precedence over a horizontal rule[[Horizontal Rule]]
-
 
 [[Horizontal Rule]]
 A horizontal rule cannot contain a sub-block
@@ -205,10 +200,11 @@ For the purposes of markdown we are only concerned with a subset of html, but st
     Doctype Declaration[[Doctype Declaration]]
     Character Data[[Character Data]]
     Html Tag[[HTML Tag]]
-Code blocks have a higher precedence
+Code blocks have a higher precedence than all HTML markup
+All HTML that is generated from Markdown is treated as inline markup
 
 [[HTML Comment]]
-An html comment is preserved and is inserted into the resulting document un altered
+An html comment is preserved and is inserted into the resulting document unaltered
 A Html comment has an opening sequence of of 4 characters, <!--
 It can be followed by any characters including newlines and carriage returns
 It is terminated by 3 characters, -->
@@ -227,7 +223,7 @@ It can contain any characters including carriage return and newline
 It is terminated by a single greater-than (>)
 
 [[Character Data]]
-Character Data is typically used with Xml and scripts, it is to be ignored and dropped from the generated document
+Character Data is typically used with Xml and scripts, it and all the data it contains is to be inserted into the generated document unaltered
 It starts with the following sequence of 9 characters, <![CDATA[
 It can contain any character including newlines and carriage returns
 It is terminated with the just 3 characters, ]]>
@@ -238,8 +234,7 @@ All Html tags can be identified by
     An opening tag[[Opening Tag]]
     A closing tag[[Closing Tag]]
     Or, a standalone tag[[Standalone Tag]]
-Any accepted tag including the characters between an opening and closing tag are passed to the generated document
-Any tags that are not acceptable including characters between the opening and closing tags are ignored and dropped from the generated document
+Characters between an opening and closing tag is treated as markdown and not considered part of the HTML tag
 
 [[Tag Name]]
 A tag name is not case sensitive
@@ -250,12 +245,18 @@ A subset of tag names are valid for Markdown[[Accepted Tag Names]]
 
 [[Opening Tag]]
 An opening tag consists of less-than (<) character, a tag name, optionally some attributes, and then an ending greater-than (>) character
+Any accepted opening tag including attributes is passed directly to the generated document
+Any opening tags that are not acceptable are ignored and dropped from the generated document
 
 [[Closing Tag]]
 A closing tag has a matching tag name, it consists of less-than (<), a slash (/), the tag name, optionally whitespace, and a greater-than (>) character
+Any closing tag is passed directly to the generated document
+Any closing tag that is not acceptable are ignored and dropped from the generated document
 
 [[Standalone Tag]]
 A standalone tag consists of a less-than (<) character, a tag name, optionally whitespace, and a greater-than (>) character
+Any standalone tag is passed directly to the generated document
+Any standalone tag that is not acceptable are ignored and dropped from the generated document
 
 [[Accepted Tag Names]]
 Only the following list of names are acceptable (they are not case-sensitive)
@@ -311,5 +312,65 @@ Only the following list of names are acceptable (they are not case-sensitive)
     tr
     track
     ul
-The "title" tag is child element of the head element
-The other tags are children or siblings of the body element
+The "title" tag is a child element of the head element
+All tags other than "title" are children or siblings of the body element
+
+[[Link]]
+A link is treated as inline markup
+It should generate 2 html tags, an opening <a> and closing </a> with transformed markdown between
+A link has to varieties:
+    A one-part link[[One-part Link]]
+    Or, a two-part link[[Two-part Link]]
+
+[[One-part Link]]
+A one-part link is a link reference[[Link Reference]]
+It has no corresponding link tag
+Html anchor tags, <a>, are inserted into the generated document at the location of the link reference
+
+[[Two-part Link]]
+A two-part link is a link tag[[Link Tag]]
+With a corresponding link reference[[Link Reference]]
+To match, both the link tag and link reference must have identical link text[[Link Text]]
+The html anchor tags, <a>, are inserted into the generated document at the location of the link tag
+No html anchor tag is inserted at the location of the corresponding link reference
+
+[[Link Tag]]
+A link tag has only one part, link text[[Link Text]]
+If there is no corresponding link reference the link tag is ignored
+
+[[Link Reference]]
+A link reference consist of four parts:
+    The link text[[Link Text]]
+    A following colon character (:), which is optional
+    A link URL[[Link Url]]
+    And, an optional link title[[Link Title]]
+The link url and optional link title can be surrounded by paranthesis
+Spaces may be between each part of the link reference
+No other character besides whitespace can be between the parts of the link reference
+A space must follow the link reference if it is followed by non-whitespace characters and no quoted link title is used
+
+[[Link Text]]
+Link text is markdown and should be processed to generate the appropriate html
+It is identifed by an opening square bracket ([) and a closing square bracket (])
+
+[[Link Url]]
+A link url immediately follows link text, ignoring any whitespace of a optional colon character
+It is a string of non-whitespace characters
+It is expected to form a valid url but no validating of the url's correctness is performed
+It is expected to consist of at least one non-whitespace character even though a valid url would have to be at least two, eg. #B
+
+[[Link Title]]
+A link title is optional
+It immediately follows the link url, ignoring any whitespace
+It can be identified as text inclosed in double-quotes (")
+It is take as literal text and is not processed in any way except to include in the generate html anchor tag as a "title" attribute
+A link title can be empty
+
+[[Blank Line]]
+A blank line block is a blank line that is not a part of another block
+It has a higher precedence than a paragraph block and therefore can act as a divider of paragraphs
+
+[[Paragraph Block]]
+A paragraph block is non-whitespace characters that do not belong to another block
+If it begins a line it can be indented by upto 3 whitespace characters
+Leading or following whitespace has no significance on the formatting of the paragraph text and may be trimmed
