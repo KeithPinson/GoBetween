@@ -64,16 +64,17 @@ When evaluating levels of indentation, a tab should behave as if replaced by 4 s
 For security reasons, the Unicode character U+0000 must be replaced with the replacement character (U+FFFD)
 
 [[Blocks]]
-Conceptually a documents consists of a chain of block elements.
+Conceptually a documents consists of a chain of block elements, some of which can have subblock.
 The block elements are:
-    Paragraphs[[Paragraph]]
+    Paragraphs (contains subblocks) [[Paragraph]]
     Blank Lines[[Blank Line]]
-    Block Quotes[[Block Quote]]
+    Block Quotes (contains subblocks) [[Block Quote]]
     Lists[[List]]
-    List Items[[List Item]]
-    Headers[[Header]]
+    List Items (contains subblocks) [[List Item]]
+    Headers (contains subblocks) [[Header]]
     Horizontal Rules[[Horizontal Rule]]
     Code Blocks[[Code Block]]
+    Links (Link text contains subblocks) [[Link]]
 
 [[Inlines]]
 Embedded in a line may be an inline element.
@@ -95,9 +96,13 @@ Of the Block elements the order of precedence, starting with the highest first:
     6. Setext Header
     7. Horizontal Rule
     8. ATX Header
-    9. List
-    10. Blank Line
-    11. Paragraph
+    9. Blank Line
+    10. Paragraph
+    11. List
+    12. Link
+Markdown places constraints on the markup that HTML does not in an effort to convert a naturally readable document to HTML
+Having a List block after a List item seems nonsensically, but precedence implies which block the parser tries to identify before another not the order
+In the case of a List, it is not identified until the first list item is identified and that will not be identified until all the way down to the level of a paragraph
 
 [[Sub-Blocks]]
 Blocks that can be nested in another block are referred to as a sub-block
