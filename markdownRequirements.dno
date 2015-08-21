@@ -1,7 +1,7 @@
 #! dno -version 0.1 -markup khand -tab 4
 
 // These requirements were drawn from the CommonMark Spec v0.21 however they diverge significantly
-// with regards to which html tags can be used and on some other minor issues.
+// with regards to which html tags can be used and on some other issues.
 
 [[Markdown Document]]
 Any sequence of characters is a valid document[[Characters]]
