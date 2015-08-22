@@ -63,6 +63,34 @@ When evaluating levels of indentation, a tab should behave as if replaced by 4 s
 [[Unicode Zero]]
 For security reasons, the Unicode character U+0000 must be replaced with the replacement character (U+FFFD)
 
+[[URL]]
+
+The full range of schemes are not supported, however the following are:
+    bitcoin
+    blockchain
+    callto
+    content
+    cvs
+    data
+    feed
+    file
+    ftp
+    geo
+    git
+    http
+    https
+    itms
+    lastfm
+    mailto
+    market
+    skype
+    sms
+    spotify
+    svn
+    tel
+    tv
+    udp
+
 [[Blocks]]
 Conceptually a document consists of a chain of block elements with inline elements, where some blocks contain subblocks.
 The block elements are:
@@ -442,27 +470,3 @@ The "value" attribute of the <li> should not be set
 
 [[Auto Link]]
 
-The following schemes are supported:
-    bitcoin
-    callto
-    content
-    cvs
-    data
-    feed
-    file
-    ftp
-    geo
-    git
-    http
-    https
-    itms
-    lastfm
-    mailto
-    market
-    skype
-    sms
-    spotify
-    svn
-    tel
-    tv
-    udp
