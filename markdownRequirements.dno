@@ -92,11 +92,11 @@ Of the Block elements the order of precedence, starting with the highest first:
     2. List Item
     3. Indented Code Block
     4. HTML
-    5. Block Quotes
-    6. Setext Header
-    7. Horizontal Rule
-    8. ATX Header
-    9. Blank Line
+    5. Blank Line
+    6. Block Quotes
+    7. Setext Header
+    8. Horizontal Rule
+    9. ATX Header
     10. Paragraph
     11. List
     12. Link
@@ -114,7 +114,7 @@ A horizontal rule takes precedence over a list item
 A horizontal rule take precedence over a paragraph
 It consists of a single line
 It does not need to be preceded nor followed by a blank line
-The line can have upto three leading whitespace characters[[Whitespace Character]]
+The line can have up to three leading whitespace characters[[Whitespace Character]]
 It cannot have 4 or more leading whitespace characters[[Whitespace Character]]
 It is identified by either of the three or more characters:
     *** (asterisks, U+002A)
@@ -182,7 +182,7 @@ A code block fence is identified by triple backticks (```) or tildes (~~~) surro
 Additional backticks (`) or tildes (~) can adjoin the triples and will be considered part of the fence not the code
 The closing triple and its additional backticks (`) or tildes (~) must in at least number the opening fence
 Backticks (`) or tildes (~) in the closing fence beyond the number in the opening fence are valid and considered as part of the closing fence
-The opening and closing fence can have upto three leading whitespace characters
+The opening and closing fence can have up to three leading whitespace characters
 The number leading white spaces of the opening fence is assumed to be the indentation of the code block and that number of leading spaces will be removed from each code block line
 Whatespace cannot be interleaved between the triples
 If no closing fence exists the code block is assumed to continue until the end of the document
@@ -244,7 +244,7 @@ Characters between an opening and closing tag is treated as markdown and not con
 [[Tag Name]]
 A tag name is not case sensitive
 It must begin with an alpha character
-It can be upto 126 characters in length
+It can be up to 126 characters in length
 After the first character any character can be alphanumeric or under-bar (_), not space
 A subset of tag names are valid for Markdown[[Accepted Tag Names]]
 
@@ -377,5 +377,61 @@ It has a higher precedence than a paragraph block and therefore can act as a div
 
 [[Paragraph Block]]
 A paragraph block is non-whitespace characters that do not belong to another block
-If it begins a line it can be indented by upto 3 whitespace characters
+If it begins a line it can be indented by up to 3 whitespace characters
 Leading or following whitespace has no significance on the formatting of the paragraph text and may be trimmed
+
+[[Block Quote]]
+A block quote is indicated be a greater-than (>) character beginning a line
+It can be preceded by up to three whitespace characters
+If a whitespace character follows the greater-than (>) character then it too is a part of the block quote
+Block quote lines that adjoin one another belong should be grouped into a single block quote
+The block quote translates to the html tag <blockquote>
+Block quotes will have nested markdown including block quotes
+
+[[List]]
+Lists are composed of list items[[List Item]]
+Lists come in two varieties:
+    Ordered[[Ordered List]]
+    And, unordered[[Unordered List]]
+In Markdown there is no separate indicator of a list, instead the first list item is the indicator that a list is forming
+Ordered and unordered list follow the same rules for indentation
+The depth of indentation indicates the whether the next list item belongs to the list or is beginning a sub-list, where deeper means a sub-list
+The depth is measured at the first non-whitespace character, not the list type indicator, eg. "* A list item" the depth is 3, measured to the "A"
+List items that do not match numeric or bullet style of the previous list item belong to either a new sub-list or a previous list
+
+[[List Item]]
+It is more likely that someone will get the depth of whitespace wrong than a list type indicator, so changing indicator types is of greater significance than indentation
+A tab is treated as 4 characters even though it may be possible to infer that editor software was treating as something else.
+The first list item can be indented by up to three whitespace characters
+Follow on list items can be indented list less all the way to zero indent, but not more
+Subsequent first sublists identify a range that follow on sublist items can be indented: from the parent list until the first sublist item
+List Items by two varieties of list type indicators:
+    Bullet list type indicators[[Bullet]]
+    Ordered list type indicators[[Number]]
+The list item can contain markdown and should be processed
+The list item should be terminated with the html closing tag </li>
+
+[[Ordered List]]
+An ordered list translates into the html tag <ol>
+The first list item number is the starting value of the list and translates to to <ol> tag attribute "start"
+  For example, "2. This is item two" would begin in html as: <ol start="2"><li>This is item two</li>
+Markdown has no direct mechanism to set the "type" attribute of the <ol> tag
+An ordered list is composed of ordered list items[[Ordered List Items]]
+Other than the first number, the numbers are only relevant in that they identify the start of a list item
+
+[[Unorderd List]]
+An unorderd list generates the html tag <ul>
+It is composed of list items that begin with a bullet[[Bullet]]
+The same character must be used for all list item
+
+[[Bullet]]
+A bullet is indicated by one of three characters: plus, minus, or start (+,-, or *)
+A space must follow the bullet character
+The html tag <li> is inserted at the point of the bullet
+
+[[Number]]
+A number is indicated by an arabic number ranging from 0 to 10 digits (one shy of 10 billion)
+The number must be followed by a dot (.) and a space
+Other than the first item in a list the number is irrelevant and using "1. " for all list items is acceptable
+The html tag <li> is inserted at the point of the number
+The "value" attribute of the <li> should not be set
