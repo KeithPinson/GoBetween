@@ -64,7 +64,7 @@ When evaluating levels of indentation, a tab should behave as if replaced by 4 s
 For security reasons, the Unicode character U+0000 must be replaced with the replacement character (U+FFFD)
 
 [[Blocks]]
-Conceptually a documents consists of a chain of block elements, some of which can have subblock.
+Conceptually a document consists of a chain of block elements with inline elements, where some blocks contain subblocks.
 The block elements are:
     Paragraphs (contains subblocks) [[Paragraph]]
     Blank Lines[[Blank Line]]
@@ -75,15 +75,19 @@ The block elements are:
     Horizontal Rules[[Horizontal Rule]]
     Code Blocks[[Code Block]]
     Links (Link text contains subblocks) [[Link]]
+    Html Blocks[[Html Markup]]
 
 [[Inlines]]
 Embedded in a line may be an inline element.
 The inline elements are:
-    Content-text
-    Links
-    Emphasized test
-    Images
-    Code
+    Backslash escapes[[Backslash]]
+    Entity References[[Entity Reference]]
+    Code Spans[[Code Spans]]
+    Emphasis[[Emphasis]]
+    Strong[[Strong]]
+    Images[[Image]]
+    Auto Links[[Auto Link]]
+    Text[[Content Text]]
 
 [[Precedence]]
 Block elements are of higher precedence than inline elements.
@@ -435,3 +439,30 @@ The number must be followed by a dot (.) and a space
 Other than the first item in a list the number is irrelevant and using "1. " for all list items is acceptable
 The html tag <li> is inserted at the point of the number
 The "value" attribute of the <li> should not be set
+
+[[Auto Link]]
+
+The following schemes are supported:
+    bitcoin
+    callto
+    content
+    cvs
+    data
+    feed
+    file
+    ftp
+    geo
+    git
+    http
+    https
+    itms
+    lastfm
+    mailto
+    market
+    skype
+    sms
+    spotify
+    svn
+    tel
+    tv
+    udp
