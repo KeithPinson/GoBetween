@@ -1,7 +1,6 @@
 package com.keithpinson.gobetween
 
 import scala.collection.immutable.HashMap
-import scala.util.matching.Regex.Match
 
 /*
  * Copyright (c) 2015 Keith Pinson.
