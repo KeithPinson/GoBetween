@@ -1,2 +1,38 @@
 #! dno -version 0.1 -markup khand -tab 4
 
+[[Terminology]]
+The URL Requirements Document defines the following terms to mean:
+
+    [[C0 Controls]]
+    C0 controls are code points in the range U+0000 to U+001F, inclusive.
+
+    [[C0 Controls and Space]]
+    C0 controls and space are C0 controls and code point U+0020.
+
+    [[ASCII Digits]]
+    ASCII digits are code points in the range U+0030 to U+0039, inclusive.
+
+    [[ASCII Hex Digits]]
+    The ASCII hex digits are ASCII digits, code points in the range U+0041 to U+0046, inclusive, and code points in the range U+0061 to U+0066, inclusive.
+
+    [[ASCII Alpha]]
+    The ASCII alpha are code points in the range U+0041 to U+005A, inclusive, and in the range U+0061 to U+007A, inclusive.
+
+    [[ASCII Alphanumeric]]
+    The ASCII alphanumeric are ASCII digits and ASCII alpha.
+
+    [[ASCII String]]
+    An ASCII string is a string in the range U+0000 to U+007F, inclusive.
+
+    [[Convert to ASCII Lowercase]]
+    In a string convert ASCII upper case letters to lowercase by replacing all code points in the range U+0041 to U+005A, inclusive, with the corresponding code points in the range U+0061 to U+007A, inclusive.
+
+    [[Serialize an Integer]]
+    Shorten an integer to a decimal number without leading zeros
+
+    [[Windows Drive Letter]]
+    A Windows drive letter is two code points, of which the first is an ASCII alpha and the second is either ":" or "|".
+
+    [[Normalized Windows Drive Letter]]
+    A normalized Windows drive letter is a Windows drive letter of which the second code point is ":".
+
