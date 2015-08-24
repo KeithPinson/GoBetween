@@ -23,9 +23,10 @@ class URLTest extends Specification { def is = sequential ^
 
 trait UrlTestHelpers {
 
-  def genC0_Controls : Gen[Char] = 'a'
+  /** C0 controls are code points in the range U+0000 to U+001F */
+  def genC0_Controls : Gen[Char] = for { n <- Gen.chooseNum(0,0x001F) } yield n.toChar
 
-  def genC0_Controls_and_Space : Gen[Char] = 'a'
+  def genC0_Controls_and_Space : Gen[Char] = for { n <- Gen.chooseNum(0,0x0020) } yield n.toChar
 
   def genASCII_Digits : Gen[Char] = '1'
 
@@ -72,9 +73,9 @@ class TerminologyTest extends Specification with ScalaCheck with UrlTestHelpers 
   A normalized Windows drive letter is a Windows drive letter of which the second code point is ":". $checkNormalized_Windows_Drive_Letter
   """
 
-  def checkC0_Controls = prop( (c0:Char) => false)
+  def checkC0_Controls = prop( (c0:Char) => c0 must beBetween(0.toChar,0x1f.toChar) ).setGen(genC0_Controls)
 
-  def checkC0_Controls_and_Space = prop( (c0:Char) => false)
+  def checkC0_Controls_and_Space = prop( (c0s:Char) => c0s must beBetween(0.toChar,0x20.toChar) ).setGen(genC0_Controls_and_Space)
 
   def checkASCII_Digits = prop( (d:Char) => false)
 
