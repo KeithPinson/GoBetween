@@ -38,6 +38,7 @@ class EntityRefTestDecimal extends Specification with ScalaCheck { def is = s2""
     n <- Gen.chooseNum(32,Character.MAX_CODE_POINT)
   } yield "&#" + n + ";"
 
+  // Was it transformed?
   def checkDecimal = prop( (e:String) => transformEntities(e) mustNotEqual e).setGen(genDecimalEntity)
 
   def checkDecimalOutOfRange = transformEntities( "&#25;") mustEqual ""
@@ -57,14 +58,14 @@ class EntityRefTestHexadecimal extends Specification with ScalaCheck { def is = 
       // Ignore lower-case here to keep the alpha characters from doubling their odds of being chosen
       def isHex(c: Char) = (c >= 'A' && c <= 'F') || (c >= '0' && c <= '9')
 
-      val isUpper = scala.util.Random.nextBoolean()
+      def shouldBeUpper = scala.util.Random.nextBoolean()
       def toCase(c: Char, shouldBeUpper: Boolean) = c match {
         case x if !x.isLetter => x
         case x if shouldBeUpper => x.toUpper
         case x => x.toLower
       }
 
-      val hh = Iterator continually toCase(scala.util.Random.nextPrintableChar(), isUpper) filter isHex
+      val hh = (Iterator continually scala.util.Random.nextPrintableChar filter isHex).map(toCase(_, shouldBeUpper))
 
       hh.take(len).mkString
   }
