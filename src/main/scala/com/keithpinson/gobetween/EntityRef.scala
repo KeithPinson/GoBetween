@@ -77,7 +77,8 @@ object EntityRef {
       case entityHexPattern(x) => unicodeToUtf16(Integer.parseInt(x,16))
       case t => entityMap.get(t).map(a=>unicodeToUtf16( Integer.parseInt(a,16) )).getOrElse(t)
     }
-    entityPattern.replaceAllIn(s, e => transform(e.matched))
+    // We carefully use replaceAllIn() without quoteReplacement()...
+    entityPattern.replaceAllIn(s, e => transform(e.matched))   // entityPattern.replaceAllIn(s, e => scala.util.matching.Regex.quoteReplacement(transform(e.matched)))
   }
 
   // Keeping this big thing at the bottom of the file
