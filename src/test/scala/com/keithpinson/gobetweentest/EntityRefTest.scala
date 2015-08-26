@@ -46,7 +46,12 @@ class EntityRefTestDecimal extends Specification with ScalaCheck { def is = s2""
 }
 
 class EntityRefTestHexadecimal extends Specification with ScalaCheck { def is = s2"""
-  Hexadecimal Unicode entity references will be transformed to a Char or null $checkBasePlane
+  Hexadecimal Unicode entity references will be transformed to a Char or empty-string
+  where C0 control codes are transformed to an empty-string $checkC0ControlCodes
+  and C1 control codes are transformed to an empty-string $checkC1ControlCodes
+  and ASCII character range are transformed to a Char $checkASCII
+  and Latin-1 Supplemental are transformed to a Char $checkLatin1
+  and 3 and 4 digit entities are transformed to a Char $checkBasePlane
   and supplemental planes are supported $checkSupplementalPlane
   and tab, &#x9; is transformed ${transformEntities("&#x9;") must beEqualTo("\t")}
   and linefeed, &#xA; is transformed ${transformEntities("&#xA;") must beEqualTo("\n")}
@@ -72,13 +77,26 @@ class EntityRefTestHexadecimal extends Specification with ScalaCheck { def is = 
 
   def genHexString : Gen[String] = hexString(10)
 
+
+  def genC0ControlCode : Gen[String] = for { n <- Gen.chooseNum(0,0x1F) } yield f"&#x$n%x;"
+  def checkC0ControlCodes = prop( (e:String) => transformEntities(e) mustNotEqual e ).setGen(genC0ControlCode)
+
+  def genC1ControlCode : Gen[String] = for { n <- Gen.chooseNum(0x7F,0x9F) } yield f"&#x$n%x;"
+  def checkC1ControlCodes = prop( (e:String) => transformEntities(e) mustNotEqual e ).setGen(genC1ControlCode)
+
+  def genASCII : Gen[String] = for { n <- Gen.chooseNum(0x20,0x7E) } yield f"&#x$n%x;"
+  def checkASCII = prop( (e:String) => transformEntities(e).lengthCompare(1) mustEqual 0).setGen(genASCII)
+
+  def genLatin1 : Gen[String] = for { n <- Gen.chooseNum(0xA0,0xFF) } yield f"&#x$n%x;"
+  def checkLatin1 = prop( (e:String) => transformEntities(e).lengthCompare(1) mustEqual 0 ).setGen(genLatin1)
+
   def genBasePlaneEntity : Gen[String] = for {
-    len <- Gen.oneOf(2,3,4)
+    len <- Gen.oneOf(2,3)
     s <- genHexString
-  } yield "&#x" + s.take(len) + ";"
+  } yield "&#x" + "1" + s.take(len) + ";"
 
   // Check entity references like, &#x0081; where the numbers may or may not have leading zeros
-  def checkBasePlane = prop( (e:String) => transformEntities(e).length must be_<=(1) ).setGen(genBasePlaneEntity)
+  def checkBasePlane = prop( (e:String) => transformEntities(e).length must be_==(1)).setGen(genBasePlaneEntity)
 
   def genSupplementalPlaneEntity : Gen[String] = for {
     s <- Gen.oneOf( 1 to 9 )
