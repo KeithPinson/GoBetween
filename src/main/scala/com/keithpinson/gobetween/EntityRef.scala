@@ -37,6 +37,8 @@ object EntityRef {
     case 9 => "\t"
     case 10 => "\n"
     case 13 => "\r"
+    case 0x24 => "\\$"      // Need to escape $ since this will be used later in replaceAllIn and dollar would normally be used to reference a group
+    case 0x5C => "\\\\"
     case a if a > Character.MAX_CODE_POINT => ""
     case a if a > Character.MAX_VALUE =>
       /* Then this is in the supplementary plane unicode range.
