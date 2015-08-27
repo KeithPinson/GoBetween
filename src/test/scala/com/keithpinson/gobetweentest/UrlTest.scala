@@ -7,8 +7,8 @@ package com.keithpinson.gobetweentest
  */
 
 import com.keithpinson.gobetween.Url._
-import org.scalacheck.{Gen, Prop}
 import org.specs2.{Specification, ScalaCheck }
+import org.scalacheck.{Arbitrary, Gen, Prop}
 
 /**
  * Test the Url class using ScalaCheck and Specs2 as specified in the URL Requirements.
@@ -23,28 +23,62 @@ class URLTest extends Specification { def is = sequential ^
 
 trait UrlTestHelpers {
 
+  val maxUrlLength = 2083
+
   /** C0 controls are code points in the range U+0000 to U+001F */
   def genC0_Controls : Gen[Char] = for { n <- Gen.chooseNum(0,0x001F) } yield n.toChar
 
+  /** C0 controls and space are C0 controls and code point U+0020 */
   def genC0_Controls_and_Space : Gen[Char] = for { n <- Gen.chooseNum(0,0x0020) } yield n.toChar
 
-  def genASCII_Digits : Gen[Char] = '1'
+  /** ASCII digits are code points in the range U+0030 to U+0039, inclusive. */
+  def genASCII_Digits : Gen[Char] = Gen.numChar //for { n <- Gen.chooseNum(0x0030,0x0039)} yield n.toChar
 
-  def genASCII_Hex_Digits : Gen[Char] = '1'
+  /** The ASCII hex digits are ASCII digits, code points in the range U+0041 to U+0046, inclusive, and code points in the range U+0061 to U+0066, inclusive. */
+  def genASCII_Hex_Digits : Gen[Char] = nextHex
 
-  def genASCII_Alpha : Gen[Char] = 'a'
+  /** The ASCII alpha are code points in the range U+0041 to U+005A, inclusive, and in the range U+0061 to U+007A, inclusive. */
+  def genASCII_Alpha : Gen[Char] = Gen.alphaChar
 
-  def genASCII_Alphanumeric : Gen[Char] = 'a'
+  /** The ASCII alphanumeric are ASCII digits and ASCII alpha. */
+  def genASCII_Alphanumeric : Gen[Char] = Gen.alphaNumChar
 
-  def genASCII_String : Gen[String] = "a"
+  /** An ASCII string is a string in the range U+0000 to U+007F, inclusive. */
+  def genASCII_String : Gen[String] = for { cc <- Gen.nonEmptyListOf(for {n <- Gen.chooseNum(0x0000,0x007F)} yield n.toChar) } yield cc.take(maxUrlLength).mkString
 
+  /** In a string convert ASCII upper case letters to lowercase by replacing all code points in the range U+0041 to U+005A, inclusive, with the corresponding code points in the range U+0061 to U+007A, inclusive. */
   def convert_to_ASCII_Lowercase( s:String ) = s.toLowerCase
 
+  /** Shorten an integer to its shortest possible decimal number string */
   def serialize_an_Integer( i:Int ) = i.toString
 
-  def genWindows_Drive_Letter : Gen[String] = "c:"
+  /** A Windows drive letter is two code points, of which the first is an ASCII alpha and the second is either ":" or "|". */
+//  def genWindows_Drive_Letter : Gen[String] = Gen.alphaChar.toString.take(1) + Gen.oneOf(":","|")
+  def genWindows_Drive_Letter : Gen[String] = for( a <- Gen.alphaChar; d <- Gen.oneOf(":","|") ) yield a.toString + d
 
-  def genNormalized_Windows_Drive_Letter : Gen[String] = "d:"
+  /** A normalized Windows drive letter is a Windows drive letter of which the second code point is ":". */
+  def genNormalized_Windows_Drive_Letter : Gen[String] = for( a <- Gen.alphaChar ) yield a.toString + ":"
+
+  /**
+   * Get the next random hex with an equal chance that it will any of 16 digits and
+   * an equal chance that the alpha digits will be upper- or lower-case.
+   */
+  def nextHex = {
+    // Ignore lower-case here to keep the alpha characters from doubling their odds of being chosen
+    def isHex(c: Char) = (c >= 'A' && c <= 'F') || (c >= '0' && c <= '9')
+
+    def shouldBeUpper = scala.util.Random.nextBoolean()
+    def toCase(c: Char, shouldBeUpper: Boolean) = c match {
+      case x if !x.isLetter => x
+      case x if shouldBeUpper => x.toUpper
+      case x => x.toLower
+    }
+
+    val hh = (Iterator continually scala.util.Random.nextPrintableChar filter isHex).map(toCase(_, shouldBeUpper))
+
+    hh.next()
+  }
+
 }
 
 class TerminologyTest extends Specification with ScalaCheck with UrlTestHelpers { def is = s2"""
@@ -71,28 +105,34 @@ class TerminologyTest extends Specification with ScalaCheck with UrlTestHelpers 
   A Windows drive letter is two code points, of which the first is an ASCII alpha and the second is either ":" or "|". $checkWindows_Drive_Letter
 
   A normalized Windows drive letter is a Windows drive letter of which the second code point is ":". $checkNormalized_Windows_Drive_Letter
-  """
+"""
 
-  def checkC0_Controls = prop( (c0:Char) => c0 must beBetween(0.toChar,0x1f.toChar) ).setGen(genC0_Controls)
+  def checkC0_Controls = prop( (c0:Char) => c0 must beBetween(0x0000.toChar,0x001f.toChar) ).setGen(genC0_Controls)
 
-  def checkC0_Controls_and_Space = prop( (c0s:Char) => c0s must beBetween(0.toChar,0x20.toChar) ).setGen(genC0_Controls_and_Space)
+  def checkC0_Controls_and_Space = prop( (c0s:Char) => c0s must beBetween(0x0000.toChar,0x0020.toChar) ).setGen(genC0_Controls_and_Space)
 
-  def checkASCII_Digits = prop( (d:Char) => false)
+  def checkASCII_Digits = prop( (d:Char) => d must beBetween(0x0030.toChar,0x0039.toChar)).setGen(genASCII_Digits)
 
-  def checkASCII_Hex_Digits = prop( (h:Char) => false)
+  def checkASCII_Hex_Digits = prop( (h:Char) => h must beBetween(0x0030.toChar,0x0039.toChar) or beBetween(0x0041.toChar,0x0046.toChar) or beBetween(0x0061.toChar,0x0066.toChar)).setGen(genASCII_Hex_Digits)
 
-  def checkASCII_Alpha = prop( (a:Char) => false)
+  def checkASCII_Alpha = prop( (a:Char) => a must beBetween(0x0041.toChar,0x005A.toChar) or beBetween(0x0061.toChar,0x007A.toChar)).setGen(genASCII_Alpha)
 
-  def checkASCII_Alphanumeric = prop( (a:Char) => false)
+  def checkASCII_Alphanumeric = prop( (a:Char) => a must beBetween(0x0030.toChar,0x0039.toChar) or beBetween(0x0041.toChar,0x005A.toChar) or beBetween(0x0061.toChar,0x007A.toChar)).setGen(genASCII_Alphanumeric)
 
-  def checkASCII_String = prop( (s:String) => false)
+  def checkASCII_String = prop( (s:String) => s.forall( a => a must beBetween(0x0000.toChar,0x007F.toChar))).setGen(genASCII_String)
 
-  def checkConvert_to_ASCII_Lowercase = prop( (s:String) => false)
+  def checkConvert_to_ASCII_Lowercase = convert_to_ASCII_Lowercase("ABCDEFGHIJKLMNOPQRSTUVWXYZ") mustEqual "abcdefghijklmnopqrstuvwxyz"
 
-  def checkSerialize_an_Integer = prop( (i:Int) => false)
+  def checkSerialize_an_Integer = serialize_an_Integer(87) mustEqual "87"
 
-  def checkWindows_Drive_Letter = prop( (s:String) => false)
+  def checkWindows_Drive_Letter = prop( (s:String) => s.lengthCompare(2) == 0 &&
+    ((s.head >=  0x0041.toChar && s.head <= 0x005A.toChar) ||
+      (s.head >= 0x0061.toChar && s.head <= 0x007A.toChar)) &&
+    (s.last == ':' || s.last == '|')).setGen(genWindows_Drive_Letter)
 
-  def checkNormalized_Windows_Drive_Letter = prop( (s:String) => false)
+  def checkNormalized_Windows_Drive_Letter = prop( (s:String) => s.lengthCompare(2) == 0 &&
+    ((s.head >=  0x0041.toChar && s.head <= 0x005A.toChar) ||
+      (s.head >= 0x0061.toChar && s.head <= 0x007A.toChar)) &&
+    s.last == ':').setGen(genNormalized_Windows_Drive_Letter)
 }
 
