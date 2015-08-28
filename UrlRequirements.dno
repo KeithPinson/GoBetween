@@ -36,3 +36,30 @@ The URL Requirements Document defines the following terms to mean:
     [[Normalized Windows Drive Letter]]
     A normalized Windows drive letter is a Windows drive letter of which the second code point is ":".
 
+[[PercentEncodedByte]]
+There are two similar Url encoding schemes in use:
+    UrlEncoding [[Url Encoding]]
+    Doctype "application/x-www-form-urlencoded" [[Www Form Url Encoding]]
+Both types of Percent Encoding need to result in a UTF-8 string
+Percent encoding converts a Byte size character to its numeric value with a prepended "%", resulting in a 3 character string
+
+[[Url Encoding]]
+C0 Control codes, U+0000 to U+001F, inclusive, are Percent Encoded
+Code points greater than U+007E are Percent Encoded
+Space (U+0020) is Percent Encoded
+Of the following special characters:
+    ~!@#$%^&*()_+`-={}|[]\:";'<>?,./
+    ~!  $% &*()_+ -          '   ,.     Are not Percent Encoded
+      @#  ^      ` ={}|[]\:"; <>?  /    Are Percent Encoded
+
+[[Www Form Url Encoding]]
+Space (U+0020) is converted into a plus sign (+)
+The alphanumeric characters "a" through "z", "A" through "Z" and "0" through "9" are not encoded
+The following special characters are not encoded:
+    .-*_
+Specifically, of the following special characters:
+    ~!@#$%^&*()_+`-={}|[]\:";'<>?,./
+            *  _  -               .     Are not Percent Encoded
+    ~!@#$%^& () +` ={}|[]\:";'<>?, /    Are Percent Encoded
+All other characters are Percent Encoded
+
