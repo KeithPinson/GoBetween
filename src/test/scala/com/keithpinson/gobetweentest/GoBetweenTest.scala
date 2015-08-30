@@ -15,5 +15,7 @@ import org.junit.runner.RunWith
 class GoBetweenTest extends SpecificationWithJUnit { def is = sequential ^
   "The Go Between Structure".title ^
   new EntityRefTest ^
+  new URLTest ^
+  new PercentEncodedByteTest ^
   end
 }
