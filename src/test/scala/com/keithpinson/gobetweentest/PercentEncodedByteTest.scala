@@ -8,6 +8,7 @@ package com.keithpinson.gobetweentest
 
 import com.keithpinson.gobetween.PercentEncodedByte
 import com.keithpinson.gobetween.PercentEncodedByte._
+import org.specs2.specification.core.Fragments
 import org.specs2.{Specification, ScalaCheck }
 import org.scalacheck.{Arbitrary, Gen, Prop}
 
@@ -76,21 +77,34 @@ All other characters are Percent Encoded
 class Url_EncodingTest extends Specification with ScalaCheck with UrlTestHelpers { def is = s2"""
   C0 Control codes, U+0000 to U+001F, inclusive, are Percent Encoded $checkC0_Controls
   Code points greater than U+007E are Percent Encoded $checkGreaterThanASCII
-  Space (U+0020) is Percent Encoded
+  Space (U+0020) is Percent Encoded $checkSpace
+  Of the following special characters:
+    ~!@#$$%^&*()_+`-={}|[]\:";'<>?,./
+    ~!  $$% &*()_+ -          '   ,.     Are not Percent Encoded $checkNotEncoded
+      @#   ^      ` ={}|[]\:"; <>?  /    Are Percent Encoded $checkEncoded
 """
-/*
-    Of the following special characters:
-    ~!@#$%^&*()_+`-={}|[]\:";'<>?,./
-  ~!  $% &*()_+ -          '   ,.     Are not Percent Encoded
-    @#  ^      ` ={}|[]\:"; <>?  /    Are Percent Encoded
-"""
-*/
-
-  def checkC0_Controls = prop( (c0:Char) => PercentEncodedByte.encode(c0.toString) must beMatching("(\\%[0-9A-F]{2}){1}".r) ).setGen(genC0_Controls)
-  def checkGreaterThanASCII = prop( (gta:Char) => PercentEncodedByte.encode(gta.toString) must beMatching("(\\%[0-9A-F]{2}){1,3}".r) ).setGen(genGreaterThanASCII)
 
   def genGreaterThanASCII : Gen[Char] = for { n <- Gen.chooseNum(0x007F,0x26FF) } yield n.toChar
 
+  def checkC0_Controls = prop( (c0:Char) => PercentEncodedByte.encode(c0.toString) must beMatching("(\\%[0-9A-F]{2}){1}".r) ).setGen(genC0_Controls)
+  def checkGreaterThanASCII = prop( (gta:Char) => PercentEncodedByte.encode(gta.toString) must beMatching("(\\%[0-9A-F]{2}){1,3}".r) ).setGen(genGreaterThanASCII)
+  def checkSpace = PercentEncodedByte.encode(" ") must beEqualTo("%20")
+
+  def checkNotEncoded = """ ~!  $% &*()_+ -          '   ,.""".foldLeft(Fragments.empty) {
+    case (res,c) if c != ' ' =>
+      res.append(c + " is not encoded" ! {PercentEncodedByte.encode(c.toString) must beEqualTo(c.toString)})
+
+    case (res,c) =>
+      res
+  }
+
+  def checkEncoded =    """  @#  ^      ` ={}|[]\\:"; <>?  /""".foldLeft(Fragments.empty) {
+    case (res,c) if c != ' ' =>
+    res.append(c + " is encoded" ! {PercentEncodedByte.encode(c.toString) must beMatching("(\\%[0-9A-F]{2}){1}".r)})
+
+    case (res,c) =>
+      res
+  }
 }
 
 class Www_Form_Url_EncodingTest extends Specification { def is =

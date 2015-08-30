@@ -15,7 +15,7 @@ package com.keithpinson.gobetween
  * @author [[http://keithpinson.com Keith Pinson]]
  */
 object PercentEncodedByte {
-  private def toPctHex( c:Char ) : String = f"%%${c.toInt}%x"
+  private def toPctHex( c:Char ) : String = f"%%${c.toInt}%X"   // Hexadecimal should be upper case to match java.net.URLEncoder
 
   /**
    * Take an encoded URL and replace the percent encoded
@@ -73,7 +73,7 @@ object PercentEncodedByte {
     } catch {
       // What is the appropriate way to handle an exception:
       //   return the string with no encoding or return an empty string?
-      case e: UnsupportedEncodingException ⇒ ""
+      case e: UnsupportedEncodingException => ""
     }
 
     if( ! isWwwForm ) {
