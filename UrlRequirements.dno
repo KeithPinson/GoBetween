@@ -52,8 +52,8 @@ Code points greater than U+007E are Percent Encoded
 Space (U+0020) is Percent Encoded
 Of the following special characters:
     ~!@#$%^&*()_+`-={}|[]\:";'<>?,./
-    ~!  $% &*()_+ -          '   ,.     Are not Percent Encoded
-      @#  ^      ` ={}|[]\:"; <>?  /    Are Percent Encoded
+    ~!  $  &*()_+ -          '   ,.     Are not Percent Encoded
+      @# %^      ` ={}|[]\:"; <>?  /    Are Percent Encoded
 
 [[Www Form Url Encoding]]
 Space (U+0020) is converted into a plus sign (+)
