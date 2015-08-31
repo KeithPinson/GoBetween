@@ -19,21 +19,28 @@ import org.scalacheck.{Arbitrary, Gen, Prop}
  *
  * @author [[http://keithpinson.com Keith Pinson]]
  */
-class PercentEncodedByteTest extends Specification { def is = skipAllIf(false) ^
+class PercentEncodedByteTest extends Specification with ScalaCheck { def is = skipAllIf(false) ^
   "There are two similar Url encoding schemes in use:" ^ br ^
   "UrlEncoding" ^ {new Url_EncodingTest} ^
-  "Doctype \"application/x-www-form-urlencoded\"" ^ {new Www_Form_Url_EncodingTest} ^
+  "Content type \"application/x-www-form-urlencoded\"" ^ {new Www_Form_Url_EncodingTest} ^
   "Both types of Percent Encoding need to result in a UTF-8 string" ! checkUTF8 ^
   "Percent encoding converts a Byte size character to its numeric value with a prepended \"%\", resulting in a 3 character string" ! checkPercent_Encode ^
+  "The Percent Encoded url needs to have a corresponding decoding ability for:" ^ br ^
+  "Decoding of UrlEncoding" ! checkDecodeURLEncoding ^
+  "Decoding of content type \"application/x-www-form-urlencoded\"" ! checkDecodingWwwFormEncoding ^
   end
 
 /*
+// Need to get the code above to use the following s2 style but for now doing something wrong and the "new" is not becoming a fragment
 def is = s2"""
   There are two similar Url encoding schemes in use:
     UrlEncoding ${new Url_EncodingTest}
-    Doctype "application/x-www-form-urlencoded" ${new Www_Form_Url_EncodingTest}
+    Content type "application/x-www-form-urlencoded" ${new Www_Form_Url_EncodingTest}
   Both types of Percent Encoding need to result in a UTF-8 string $checkUTF8
   Percent encoding converts a Byte size character to its numeric value with a prepended "%", resulting in a 3 character string $checkPercent_Encode
+  The Percent Encoded url needs to have a corresponding decoding ability for:
+  Decoding of UrlEncoding $checkDecodeURLEncoding
+  Decoding of content type "application/x-www-form-urlencoded" $checkDecodingWwwFormEncoding
 """
 */
 
@@ -50,29 +57,15 @@ def is = s2"""
 
     encode( rawStr ) mustEqual expectedStr
   }
+
+  val maxUrlLength = 2083
+
+  def genString : Gen[String] = for { cc <- Gen.nonEmptyListOf(for {n <- Gen.chooseNum(0x0000,0x26FF)} yield n.toChar) } yield cc.take(maxUrlLength).mkString
+
+  def checkDecodeURLEncoding = prop( (s:String) => PercentEncodedByte.decode(PercentEncodedByte.encode(s)) must beEqualTo(s) ).setGen(genString)
+
+  def checkDecodingWwwFormEncoding = prop( (s:String) => PercentEncodedByte.decode(PercentEncodedByte.encode(s, isWwwForm = true), isWwwForm = true) must beEqualTo(s) ).setGen(genString)
 }
-
-/*
-[[Url Encoding]]
-C0 Control codes, U+0000 to U+001F, inclusive, are Percent Encoded
-Code points greater than U+007E are Percent Encoded
-Space (U+0020) is Percent Encoded
-Of the following special characters:
-~!@#$%^&*()_+`-={}|[]\:";'<>?,./
-~!  $% &*()_+ -          '   ,.     Are not Percent Encoded
-@#  ^      ` ={}|[]\:"; <>?  /    Are Percent Encoded
-
-[[Www Form Url Encoding]]
-Space (U+0020) is converted into a plus sign (+)
-The alphanumeric characters "a" through "z", "A" through "Z" and "0" through "9" are not encoded
-The following special characters are not encoded:
-.-*_
-Specifically, of the following special characters:
-~!@#$%^&*()_+`-={}|[]\:";'<>?,./
-*  _  -               .     Are not Percent Encoded
-~!@#$%^& () +` ={}|[]\:";'<>?, /    Are Percent Encoded
-All other characters are Percent Encoded
-*/
 
 class Url_EncodingTest extends Specification with ScalaCheck with UrlTestHelpers { def is = s2"""
   C0 Control codes, U+0000 to U+001F, inclusive, are Percent Encoded $checkC0_Controls
@@ -80,8 +73,8 @@ class Url_EncodingTest extends Specification with ScalaCheck with UrlTestHelpers
   Space (U+0020) is Percent Encoded $checkSpace
   Of the following special characters:
     ~!@#$$%^&*()_+`-={}|[]\:";'<>?,./
-    ~!  $$% &*()_+ -          '   ,.     Are not Percent Encoded $checkNotEncoded
-      @#   ^      ` ={}|[]\:"; <>?  /    Are Percent Encoded $checkEncoded
+    ~!  $$  &*()_+ -          '   ,.     Are not Percent Encoded $checkNotEncoded
+      @#  %^      ` ={}|[]\:"; <>?  /    Are Percent Encoded $checkEncoded
 """
 
   def genGreaterThanASCII : Gen[Char] = for { n <- Gen.chooseNum(0x007F,0x26FF) } yield n.toChar
@@ -90,7 +83,7 @@ class Url_EncodingTest extends Specification with ScalaCheck with UrlTestHelpers
   def checkGreaterThanASCII = prop( (gta:Char) => PercentEncodedByte.encode(gta.toString) must beMatching("(\\%[0-9A-F]{2}){1,3}".r) ).setGen(genGreaterThanASCII)
   def checkSpace = PercentEncodedByte.encode(" ") must beEqualTo("%20")
 
-  def checkNotEncoded = """ ~!  $% &*()_+ -          '   ,.""".foldLeft(Fragments.empty) {
+  def checkNotEncoded = """ ~!  $  &*()_+ -          '   ,.""".foldLeft(Fragments.empty) {
     case (res,c) if c != ' ' =>
       res.append(c + " is not encoded" ! {PercentEncodedByte.encode(c.toString) must beEqualTo(c.toString)})
 
@@ -98,7 +91,7 @@ class Url_EncodingTest extends Specification with ScalaCheck with UrlTestHelpers
       res
   }
 
-  def checkEncoded =    """  @#  ^      ` ={}|[]\\:"; <>?  /""".foldLeft(Fragments.empty) {
+  def checkEncoded =    """  @# %^      ` ={}|[]\\:"; <>?  /""".foldLeft(Fragments.empty) {
     case (res,c) if c != ' ' =>
     res.append(c + " is encoded" ! {PercentEncodedByte.encode(c.toString) must beMatching("(\\%[0-9A-F]{2}){1}".r)})
 
@@ -107,7 +100,38 @@ class Url_EncodingTest extends Specification with ScalaCheck with UrlTestHelpers
   }
 }
 
-class Www_Form_Url_EncodingTest extends Specification { def is =
-  success // failure
-}
+class Www_Form_Url_EncodingTest extends Specification with ScalaCheck with UrlTestHelpers { def is = s2"""
+  Space (U+0020) is converted into a plus sign (+) $checkSpace
+  The alphanumeric characters "a" through "z", "A" through "Z" and "0" through "9" are not encoded $checkAlphanumeric
+  The following special characters are not encoded:
+    .-*_                                                         ${checkNotEncoded(".-*_")}
+  Specifically, of the following special characters:
+    ~!@#$$%^&*()_+`-={}|[]\:";'<>?,./
+            *  _  -               .     Are not Percent Encoded ${checkNotEncoded("""         *  _  -               . """)}
+    ~!@#$$%^& () +` ={}|[]\:";'<>?, /    Are Percent Encoded        ${checkEncoded("""~!@#$$%^& () +` ={}|[]\:";'<>?, /""")}
+  All other characters are Percent Encoded $checkAllOthersEncoded
+  """
 
+  def checkSpace = PercentEncodedByte.encode(" ", isWwwForm = true) must beEqualTo("+")
+  def checkAlphanumeric = prop( (a:Char) => PercentEncodedByte.encode(a.toString, isWwwForm = true) must beEqualTo(a.toString) ).setGen(genASCII_Alphanumeric)
+
+  def checkNotEncoded( s:String ) = s.foldLeft(Fragments.empty) {
+    case (res,c) if c != ' ' =>
+      res.append(c + " is not encoded" ! {PercentEncodedByte.encode(c.toString, isWwwForm = true) must beEqualTo(c.toString)})
+
+    case (res,c) =>
+      res
+  }
+
+  def checkEncoded( s:String ) = s.foldLeft(Fragments.empty) {
+    case (res,c) if c != ' ' =>
+      res.append(c + " is encoded" ! {PercentEncodedByte.encode(c.toString, isWwwForm = true) must beMatching("(\\%[0-9A-F]{2}){1}".r)})
+
+    case (res,c) =>
+      res
+  }
+
+  def checkAllOthersEncoded = prop( (a:Char) => PercentEncodedByte.encode(a.toString) must beMatching("(\\%[0-9A-F]{2}){1,3}".r) ).setGen(genAllOthers)
+
+  def genAllOthers : Gen[Char] = for { n <- Gen.chooseNum(0x0000,0x26FF) if n < 0x20 || n > 0x7E } yield n.toChar
+}

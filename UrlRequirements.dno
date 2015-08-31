@@ -39,9 +39,12 @@ The URL Requirements Document defines the following terms to mean:
 [[PercentEncodedByte]]
 There are two similar Url encoding schemes in use:
     UrlEncoding [[Url Encoding]]
-    Doctype "application/x-www-form-urlencoded" [[Www Form Url Encoding]]
+    Content type "application/x-www-form-urlencoded" [[Www Form Url Encoding]]
 Both types of Percent Encoding need to result in a UTF-8 string
 Percent encoding converts a Byte size character to its numeric value with a prepended "%", resulting in a 3 character string
+The Percent Encoded url needs to have a corresponding decoding ability for:
+    Decoding of UrlEncoding
+    Decoding of content type "application/x-www-form-urlencoded"
 
 [[Url Encoding]]
 C0 Control codes, U+0000 to U+001F, inclusive, are Percent Encoded

@@ -19,8 +19,8 @@ object PercentEncodedByte {
 
   /**
    * Take an encoded URL and replace the percent encoded
-   * @param url
-   * @param isWwwForm
+   * @param url A string that may contain %nn (Percent Encoded Bytes)
+   * @param isWwwForm  Defaults to false otherwise use the percent encoding specified for www forms
    * @return A decoded URL string
    */
   def decode( url:String, isWwwForm:Boolean = false ) : String = {
@@ -34,7 +34,6 @@ object PercentEncodedByte {
         replace("~", toPctHex('~')).
         replace("!", toPctHex('!')).
         replace("$", toPctHex('$')).
-        replace("%", toPctHex('%')).
         replace("&", toPctHex('&')).
         replace("(", toPctHex('(')).
         replace(")", toPctHex(')')).
@@ -60,7 +59,7 @@ object PercentEncodedByte {
    * Transform space and certain special characters to something more palatable to a web server.
    *
    * @param url A raw URL string
-   * @param isWwwForm Indicates if the doctype is "application/x-www-form-urlencoded"
+   * @param isWwwForm Indicates if the content type is "application/x-www-form-urlencoded"
    * @return Encoded URL string
    */
   def encode( url:String, isWwwForm:Boolean = false ) : String = {
@@ -79,9 +78,9 @@ object PercentEncodedByte {
     if( ! isWwwForm ) {
       /* Space will have been converted to plus and of the special characters:
        *
-       *   @#  ^      ` ={}|[]\:"; <>?  /     URL Special Characters Percent Encoded
+       *   @# %^      ` ={}|[]\:"; <>?  /     URL Special Characters Percent Encoded
        * ~!@#$%^& () +` ={}|[]\:";'<>?, /     Form Special Characters Percent Encoded
-       * ~!  $% & () +            '   ,         These characters will have to be put back
+       * ~!  $  & () +            '   ,         These characters will have to be put back
        */
 
       result = result.
@@ -89,7 +88,6 @@ object PercentEncodedByte {
         replace(toPctHex('~'), "~").
         replace(toPctHex('!'), "!").
         replace(toPctHex('$'), "$").
-        replace(toPctHex('%'), "%").
         replace(toPctHex('&'), "&").
         replace(toPctHex('('), "(").
         replace(toPctHex(')'), ")").
