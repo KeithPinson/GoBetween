@@ -5,7 +5,7 @@
 
 [[Markdown Document]]
 Markdown's original purpose was to convert type written text to html markup
-For our purposes Markdown (including the embedded html) is to convert text to the GoBetween Intermediate Structure
+For our purposes, Markdown's job (including the embedded html) is to convert text to the GoBetween Intermediate Structure
 
 [[Terminology]]
 The Markdown Requirements Document defines the following terms to mean:
