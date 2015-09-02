@@ -1,4 +1,9 @@
 #! dno -version 0.1 -markup khand -tab 4
+A URL is a string of characters from which one can identify content either locally or across the Internet
+A URL has a max length[[URL Max Length]]
+
+[[URL Max Length]]
+The maximum string length of a URL is 2083 characters
 
 [[Terminology]]
 The URL Requirements Document defines the following terms to mean:
@@ -65,4 +70,49 @@ Specifically, of the following special characters:
             *  _  -               .     Are not Percent Encoded
     ~!@#$%^& () +` ={}|[]\:";'<>?, /    Are Percent Encoded
 All other characters are Percent Encoded
+
+[[Parsing]]
+An URL can be parsed as specified in RFC3986 - "URI Generic Syntax" to produce the following parts:
+    URL Scheme[[URL Scheme]]
+    URL Scheme Specific Part[[URL Scheme Specific Part]]
+    Optional User Name[[User Name]]
+    Optional Password[[Password]]
+    Optional Host[[Host]]
+    Optional Port[[Port]]
+    Optional Path[[Path]]
+    Optional Raw Path[[Raw Path]]
+    Optional Query[[Query]]
+    Optional Fragment[[Fragment]]
+
+[[URL Scheme]]
+A method should exist to get the URL scheme as text string
+An empty string indicates that the URL had no scheme
+
+[[URL Scheme Specific Part]]
+Some URLs are composed of the scheme, a colon, and then something that is specific to the scheme and does not look like an URL
+A method should exist to get the URL scheme specific part as text string
+
+[[User Name]]
+A method should exist to return an optional user name as a string
+
+[[Password]]
+A method should exist to return an optional user password as a string
+
+[[Host]]
+A method should exist to return an optional host name as a string
+
+[[Port]]
+A method should exist to return an optional port number as a string
+
+[[Path]]
+A method should exist to return an optional path string in decoded Percent Encode Byte format
+
+[[Raw Path]]
+A method should exist to return an optional path string in its original format which may be encoded Percent Encode Byte form
+
+[[Query]]
+A method should exist to return an optional query as a string
+
+[[Fragment]]
+A method should exist to return an optional fragments as a string
 
