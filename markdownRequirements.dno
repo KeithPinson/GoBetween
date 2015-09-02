@@ -4,55 +4,109 @@
 // with regards to which html tags can be used and on some other issues.
 
 [[Markdown Document]]
-Any sequence of characters is a valid document[[Characters]]
+Markdown's original purpose was to convert type written text to html markup
+This docoment describes the requirements for converting Markdown, including embedded html, to the GoBetween Intermediate Structure
 
-[[Characters]]
-A character is a unicode code point.
-No encoding is specified.
+[[Terminology]]
+The Markdown Requirements Document defines the following terms to mean:
 
-[[Lines]]
-A line is a sequence of zero or more characters followed by an end of line[End of Line]]
+    [[Character]]
+    A character is a unicode code point
+    No file encoding, ie. "UTF-8", is specified, so its size the code point and the file encoding in use
 
-[[End of Line]]
-An end of line is one of the following:
-    An end of File
-    A newline (U+000A)
-    A carriage return (U+000D)
-    Or, a carriage return + newline (U+000D,U+000A)
+    [[Lines]]
+    A line is a sequence of zero or more characters followed by an end of line[End of Line]]
 
-[[Blank Line]]
-A line containing no characters, or a line containing only spaces (U+0020) or tabs (U+0009), is called a blank line.
+    [[End of Line]]
+    An end of line is one of the following:
+        An end of File
+        A newline (U+000A)
+        A carriage return (U+000D)
+        Or, a carriage return + newline (U+000D,U+000A)
 
-[[Whitespace Character]]
-A whitespace character is either:
-    space (U+0020)
-    tab (U+0009)
-    newline (U+000A)
-    line tabulation (U+000B)
-    form feed (U+000C)
-    carriage return (U+000D)
+    [[Blank Line]]
+    A line containing no characters after all the whitespace has been removed is a blank line[[Whitespace]]
 
-[[Whitespace]]
-Whitespace is a sequence of one or more whitespace characters[[Whitespace Character]]
+    [[Space]]
+    A space is U+0020
 
-[[Unicode Whitespace Character]]
-A unicode whitespace character is any code point in the unicode Zs class, or a regular whitespace character[[Whitespace Character]]
+    [[Tab]]
+    A tab is U+0009
 
-[[Unicode Whitespace]]
-Unicode whitespace is a sequence of one or more unicode whitespace characters[[Unicode Whitespace Character]]
+    [[Dot]]
+    A period or full-stop is U+002E
 
-[[Space]]
-A space is U+0020.
+    [[Whitespace Character]]
+    A whitespace character is a character that moves the location of the cursor but does not print anything, it can be any of the following:
+        &#x0009; ( ) 0x0009 "horizontal tab"
+        &#x000A; ( ) 0x000A "linefeed"
+        &#x000B; ( ) 0x000B "vertical tab"
+        &#x000C; ( ) 0x000C "form feed"
+        &#x000D; ( ) 0x000D "carriage return"
+        &#x0020; ( ) 0x0020 "space"
+        &nbsp;  () 0x00A0 "no-break space"
+        &#x1680; () 0x1680 "ogham space mark"
+        &#x2000; () 0x2000 "en quad"
+        &#x2001; () 0x2001 "em quad"
+        &ensp; () 0x2002 "en space"
+        &emsp; () 0x2003 "em space"
+        &#x2004; () 0x2004 "three-per-em space"
+        &#x2005; () 0x2005 "four-per-em space"
+        &#x2006; () 0x2006 "six-per-em-space"
+        &#x2007; () 0x2007 "figure space"
+        &#x2008; () 0x2008 "punctuation space"
+        &thinsp; () 0x2009 "thin space"
+        &#x200A; () 0x200A "hair space"
+        &#x202F; () 0x202F "narrow no-break space"
+        &#x205F; () 0x205F "medium mathematical space"
+        &#x3000; () 0x3000 "ideographic space"
 
-[[Non Whitespace Character]]
-A non-whitespace character is any character that is not a whitespace character[[Whitespace Character]]
+    [[Whitespace]]
+    Whitespace is a sequence of one or more whitespace characters[[Whitespace Character]]
 
-[[ASCII Punctuation Character]]
-An ASCII punctuation character is any one of the ASCII characters:
-    (!, ", #, $, %, &, ', (, ), *, +, ,, -, ., /, :, ;, <, =, >, ?, @, [, \, ], ^, _, `, {, |, }, ~)
+    [[Non Whitespace Character]]
+    A non-whitespace character is any character that is not a whitespace character[[Whitespace Character]]
 
-[[Punctuation Character]]
-A punctuation character is an ASCII punctuation character or anything in the unicode classes Pc, Pd, Pe, Pf, Pi, Po, or Ps.
+    [[Punctuation Character]]
+    A punctuation character is any one of the ASCII characters:
+        (!, ", #, $, %, &, ', (, ), *, +, ,, -, ., /, :, ;, <, =, >, ?, @, [, \, ], ^, _, `, {, |, }, ~)
+
+    [[Unicode Punctuation Character]]
+    A unicode punctuation character are punctuation characters beyond the ASCII character range found in the unicode classes: Pc, Pd, Pe, Pf, Pi, Po, and Ps.
+
+    [[Escaped Punctuation]]
+    Any punctuation character can be preceded by a backslash (\) which indicates it should be treated like a literal punctuation character and not a markdown element
+
+[[Syntax]]
+Any sequence of characters is a valid markdown document[[Character]]
+With the exception of entity references and metadata, HTML consists of characters with html tags inserted
+Markdown can be characters without html tags, but ultimately, like html, it converts to characters with inserted html tags
+Markdown elements may contain nested markdown elements
+With the exception of two-part links, all Markdown is transformative near the location where it is occurs
+With the exception of ordered lists, all markdown begins with a non-alphanumeric character
+Ordered lists begin with two-part identifier, a number and either a dot "." or a closing parenthesis ")"
+So, Markdown is a transformative language where any character other than the following does not transform:
+    (These characters may trigger a transform)
+    #
+    *
+    _
+    -
+    +
+    nn. (up to 10 digits before the dot) [[ordered list item]]
+    0x9 [[Tab]]
+    0x20 0x20 0x20 0x20 (4 spaces at the beginning of a line) [[Space]]
+    0x20 0x20 (2 spaces at the end of a line) [[Space]]
+    \
+    `
+    ~
+    <
+    >
+    !
+    [
+    {
+When markdown is completed transforming, it will only have inserted elements into the existing text
+None of the existing text will have been changed except for 0x0000, whitespace and backslash escapes
+
 
 [[Tabs]]
 Tabs in lines are not expanded to spaces
@@ -64,38 +118,14 @@ When evaluating levels of indentation, a tab should behave as if replaced by 4 s
 For security reasons, the Unicode character U+0000 must be replaced with the replacement character (U+FFFD)
 
 [[URL]]
-
-The full range of schemes are not supported, however the following are:
-    bitcoin
-    blockchain
-    callto
-    content
-    cvs
-    data
-    feed
-    file
-    ftp
-    geo
-    git
-    http
-    https
-    itms
-    lastfm
-    mailto
-    market
-    skype
-    sms
-    spotify
-    svn
-    tel
-    tv
-    udp
+A Url should follow the current specifications defined in RFC3986-URI Generic Syntax
 
 [[Blocks]]
-Conceptually a document consists of a chain of block elements with inline elements, where some blocks contain subblocks.
+Conceptually a document consists of a chain of block elements with inline elements, where some blocks contain subblocks
 The block elements are:
     Paragraphs (contains subblocks) [[Paragraph]]
     Blank Lines[[Blank Line]]
+    Backslash escapes[[Backslash]]
     Block Quotes (contains subblocks) [[Block Quote]]
     Lists[[List]]
     List Items (contains subblocks) [[List Item]]
@@ -106,9 +136,8 @@ The block elements are:
     Html Blocks[[Html Markup]]
 
 [[Inlines]]
-Embedded in a line may be an inline element.
+Found embedded in a line, may be an inline element
 The inline elements are:
-    Backslash escapes[[Backslash]]
     Entity References[[Entity Reference]]
     Code Spans[[Code Spans]]
     Emphasis[[Emphasis]]
@@ -120,25 +149,26 @@ The inline elements are:
 [[Precedence]]
 Block elements are of higher precedence than inline elements.
 Of the Block elements the order of precedence, starting with the highest first:
-    1. Fenced Code Block
-    2. List Item
-    3. Indented Code Block
-    4. HTML
-    5. Blank Line
-    6. Block Quotes
-    7. Setext Header
-    8. Horizontal Rule
-    9. ATX Header
-    10. Paragraph
-    11. List
-    12. Link
+    1. Backslash Escapes
+    2. Fenced Code Block
+    3. List Item
+    4. Indented Code Block
+    5. HTML
+    6. Blank Line
+    7. Block Quotes
+    8. Setext Header
+    9. Horizontal Rule
+    10. ATX Header
+    11. Paragraph
+    12. List
+    13. Link
 Markdown places constraints on the markup that HTML does not in an effort to convert a naturally readable document to HTML
 Having a List block after a List item seems nonsensically, but precedence implies which block the parser tries to identify before another not the order
 In the case of a List, it is not identified until the first list item is identified and that will not be identified until all the way down to the level of a paragraph
 
 [[Sub-Blocks]]
 Blocks that can be nested in another block are referred to as a sub-block
-A sub-block can never span across its parent block boundary
+A sub-block can never span past its parent block boundary
 
 [[Horizontal Rule]]
 A horizontal rule cannot contain a sub-block
