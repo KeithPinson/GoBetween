@@ -17,5 +17,6 @@ class GoBetweenTest extends SpecificationWithJUnit { def is = sequential ^
   new EntityRefTest ^
   new URLTest ^
   new PercentEncodedByteTest ^
+  new MarkdownTest ^
   end
 }

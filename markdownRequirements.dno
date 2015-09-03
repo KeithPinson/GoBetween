@@ -7,22 +7,25 @@
 Markdown's original purpose was to convert type written text to html markup
 For our purposes, Markdown's job (including the embedded html) is to convert text to the GoBetween Intermediate Structure
 
-[[Terminology]]
+[[Markdown Terminology]]
 The Markdown Requirements Document defines the following terms to mean:
 
     [[Character]]
     A character is a unicode code point
-    No file encoding, ie. "UTF-8", is specified, so its size the code point and the file encoding in use
+    Any file encoding can be used, ie. "UTF-8" or "windows-1252", so the size of the code point depends on the file encoding being used
 
     [[Lines]]
     A line is a sequence of zero or more characters followed by an end of line[End of Line]]
 
     [[End of Line]]
     An end of line is one of the following:
-        An end of File
+        An end of File [[End-of-file]]
         A newline (U+000A)
         A carriage return (U+000D)
         Or, a carriage return + newline (U+000D,U+000A)
+
+    [[End of File]]
+    Conceptually End-of-file marks the point beyond the last character, it is system dependent.
 
     [[Blank Line]]
     A line containing no characters after all the whitespace has been removed is a blank line[[Whitespace]]

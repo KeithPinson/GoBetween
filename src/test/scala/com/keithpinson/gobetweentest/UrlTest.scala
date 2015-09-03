@@ -18,7 +18,7 @@ import org.scalacheck.{Arbitrary, Gen, Prop}
  * @author [[http://keithpinson.com Keith Pinson]]
  */
 class URLTest extends Specification { def is = sequential ^
-  new TerminologyTest
+  new UrlTerminologyTest
 }
 
 trait UrlTestHelpers {
@@ -81,7 +81,7 @@ trait UrlTestHelpers {
 
 }
 
-class TerminologyTest extends Specification with ScalaCheck with UrlTestHelpers { def is = s2"""
+class UrlTerminologyTest extends Specification with ScalaCheck with UrlTestHelpers { def is = s2"""
   The URL Requirements Document defines the following terms to mean:
 
   C0 controls are code points in the range U+0000 to U+001F, inclusive $checkC0_Controls
