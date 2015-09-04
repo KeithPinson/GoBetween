@@ -32,26 +32,26 @@ trait MarkdownTestHelpers {
   def genWhitespace : Gen[String] = for { ww <- Gen.listOf(for {w <- Gen.oneOf(ws)} yield w) } yield ww.take(60).mkString
 
   private val ws = List(
-    "0x0009", // horizontal tab
-    "0x000B", // vertical tab
-    "0x000C", // form feed
-    "0x0020", // space
-    "0x00A0", // no-break space
-    "0x1680", // ogham space mark
-    "0x2000", // en quad
-    "0x2001", // em quad
-    "0x2002", // en space
-    "0x2003", // em space
-    "0x2004", // three-per-em space
-    "0x2005", // four-per-em space
-    "0x2006", // six-per-em-space
-    "0x2007", // figure space
-    "0x2008", // punctuation space
-    "0x2009", // thin space
-    "0x200A", // hair space
-    "0x202F", // narrow no-break space
-    "0x205F", // medium mathematical space
-    "0x3000" // ideographic space
+    "\u0009", // horizontal tab
+    "\u000B", // vertical tab
+    "\u000C", // form feed
+    "\u0020", // space
+    "\u00A0", // no-break space
+    "\u1680", // ogham space mark
+    "\u2000", // en quad
+    "\u2001", // em quad
+    "\u2002", // en space
+    "\u2003", // em space
+    "\u2004", // three-per-em space
+    "\u2005", // four-per-em space
+    "\u2006", // six-per-em-space
+    "\u2007", // figure space
+    "\u2008", // punctuation space
+    "\u2009", // thin space
+    "\u200A", // hair space
+    "\u202F", // narrow no-break space
+    "\u205F", // medium mathematical space
+    "\u3000" // ideographic space
   )
 
   //  def genSafeString : Gen[String] = for { cc <- Gen.nonEmptyListOf(for {n <- Gen.chooseNum(0x0000,0x26FF)} yield n.toChar) } yield cc.take(maxLength).mkString
@@ -82,7 +82,7 @@ class MarkdownTerminologyTest extends Specification with ScalaCheck with Markdow
 
   def checkEOL = prop( (s:String) => s.lengthCompare(2) <= 0 && (s must beMatching("""(\n|\r|\r\n)$""")) ).setGen(genEOL)
 
-  def checkBlankLine = prop( (s:String) => s must beMatching("""^[\p{Zs}]*(\n|\r|\r\n)$""") ).setGen(genBlankLine)
+  def checkBlankLine = prop( (s:String) => s must beMatching("""^([\p{Zs}|\u0009|\u000B|\u000C])*(\n|\r|\r\n)$""") ).setGen(genBlankLine)
 }
 
 /*
