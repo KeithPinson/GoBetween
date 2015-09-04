@@ -86,7 +86,5 @@ class MarkdownTerminologyTest extends Specification with ScalaCheck with Markdow
 }
 
 /*
-    [[Blank Line]]
-    A line containing no characters after all the whitespace has been removed is a blank line[[Whitespace]]
 
 */
