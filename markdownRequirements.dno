@@ -42,9 +42,9 @@ The Markdown Requirements Document defines the following terms to mean:
     [[Whitespace Character]]
     A whitespace character is a character that moves the location of the cursor but does not print anything, it can be any of the following:
         &#x0009; ( ) 0x0009 "horizontal tab"
-        &#x000B; ( ) 0x000B "vertical tab"
-        &#x000C; ( ) 0x000C "form feed"
-        &#x0020; ( ) 0x0020 "space"
+        &#x000B; () 0x000B "vertical tab"
+        &#x000C; () 0x000C "form feed"
+        &#x0020; () 0x0020 "space"
         &nbsp;  () 0x00A0 "no-break space"
         &#x1680; () 0x1680 "ogham space mark"
         &#x2000; () 0x2000 "en quad"
@@ -77,6 +77,7 @@ The Markdown Requirements Document defines the following terms to mean:
 
     [[Escaped Punctuation]]
     Any punctuation character can be preceded by a backslash (\) which indicates it should be treated like a literal punctuation character and not a markdown element
+    Escaped punctuation does not include punctuation beyond the ASCII range[[Unicode Punctuation Character]]
 
 [[Syntax]]
 Any sequence of characters is a valid markdown document[[Character]]
