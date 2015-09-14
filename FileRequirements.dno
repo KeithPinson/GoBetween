@@ -1,0 +1,21 @@
+#! dno -version 0.1 -markup khand -tab 4
+
+[[File Handler]]
+The purpose of the file handler is support the complexities of remote files beyond the support that is offered by standard file systems and http.
+As with any file system there are two complimentary parts:
+    A file reader [[File Read]]
+    And, a file writer [[File Write]]
+
+[[File Read]]
+A file reader consists of the following parts:
+    A read cache [[Read Cache]]
+    A listener [[Read Listener]]
+    A file requester [[File Request]]
+    A security package [[Read Security]]
+    And, a handler [[Read Handler]]
+
+[[File Write]]
+A file writer consists of the following parts:
+    A file store [[File Store]]
+    A security package [[Write Security]]
+    and, helpers to deliver the file [[Write Helpers]]
