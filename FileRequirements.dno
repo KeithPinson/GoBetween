@@ -14,6 +14,43 @@ A file reader consists of the following parts:
     A security package [[Read Security]]
     And, a handler [[Read Handler]]
 
+[[Read Cache]]
+The purpose of the read cache is to be a temporary local store, it must support:
+    A contract that the file will not be removed during downloads/live updates [[Read Cache Reservation]]
+    A configurable system to prioritize a file's place in the cache [[Read Cache Priorities]]
+    A mechanism to date files, obscure local file names, and record the file request [[Read File Local Storage]]
+    Removal of stale files and low priority files [[Read cache pruning]]
+
+[[Read Listener]]
+All files are assumed to be transmitted from a remote system. A listener exists to support:
+    Remotely streamed files [[Read File Stream]]
+    Live updates to a cached file [[Read Live Updates]]
+
+[[Rile Request]]
+To avoid resending files that exist in the cache a file request consists of:
+    File URL [[File URL]]
+    Packets in cache [[File Spanning]]
+    Checksum of file [[File Checksum]]
+    Hamming Code [[File Hamming Code]]
+
+[[Read Security]]
+To try and avoid security nightmares, the request of a file should be treated like an API request, where:
+    Server host is obscured [[Host obscured]]
+    API (file server) key stored remotely [[Remote key storage]]
+    SSL (https) is used [[SSL transport]]
+
+[[Read Handler]]
+
+
+[[File URL]]
+
+[[File Spanning]]
+
+[[File Checksum]]
+
+[[File Hamming Code]]
+
+
 [[File Write]]
 A file writer consists of the following parts:
     A file store [[File Store]]
