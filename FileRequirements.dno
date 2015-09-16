@@ -26,12 +26,14 @@ All files are assumed to be transmitted from a remote system. A listener exists 
     Remotely streamed files [[Read File Stream]]
     Live updates to a cached file [[Read Live Updates]]
 
-[[Rile Request]]
-To avoid resending files that exist in the cache a file request consists of:
+[[File Request]]
+To avoid resending files that exist in the cache a file request consists of a header with the following metadata:
     File URL [[File URL]]
+    File Name [[File Name]]
+    Metadata Version [[Metadata Version]]
     Packets in cache [[File Spanning]]
     Checksum of file [[File Checksum]]
-    Hamming Code [[File Hamming Code]]
+    Hamming-like Code [[File Hamming-like Code]]
 
 [[Read Security]]
 To try and avoid security nightmares, the request of a file should be treated like an API request, where:
@@ -40,16 +42,36 @@ To try and avoid security nightmares, the request of a file should be treated li
     SSL (https) is used [[SSL transport]]
 
 [[Read Handler]]
+The read handler is responsible for assebling the received packets and passing them to a parser for conversion to the goBetween format
 
+[[Metadata Version]]
+Any major or minor change to the code that creates and stores the metadata must be given a version id
+Old code once released is never touched, instead each version must have a new block of code to handle the metadata
+A cached file may have a version of the metadata that is out of data
+    An exception should not be thrown because the version is old
+    A rebuild should not be required because the version is old
+The identifying version number should be designed and stored in such a way that all versions will get the version number in exactly the same way
 
 [[File URL]]
+The URL should be should provide a string that can be used as a query
+It should be possible alternate between encoded and decoded Percent Encoded formats
+
+[[File Name]]
+A unicode string should contain the file name as it should be displayed
 
 [[File Spanning]]
+A mechanism must exist to send files as packets, to be reassembled when the all the packets are received
+An existing mechanism to support this should be used
+It should be possible to restart a stalled download without the need to resend all the packets
 
 [[File Checksum]]
+A whole file has a checksum
+The term checksum is generic and a sophistacted hash should be used that results in a guaranteed unique number
 
-[[File Hamming Code]]
-
+[[File Hamming-like Code]]
+A metric must exist that can be used to compare one version of a file with another by the metric and determine how much the file has changed
+The purpose of the metric is allow the cached version of a file to be displayed if it is not wildly different than the file to be streamed
+The metric to be used is a code and the difference between two codes is the
 
 [[File Write]]
 A file writer consists of the following parts:
