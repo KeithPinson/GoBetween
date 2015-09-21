@@ -41,6 +41,40 @@ To try and avoid security nightmares, the request of a file should be treated li
     API (file server) key stored remotely [[Remote key storage]]
     SSL (https) is used [[SSL transport]]
 
+[[Host obscured]]
+
+[[Remote key storage]]
+
+[[SSL transport]]
+We use the term SSL because it is a recognizable acronym, we really mean SSL/TSL, the layer upon which https packets are sent
+
+     TLS v1.1 or greater, TLS v1.2 should be the first choice when negotiating the protocol
+     2048 bit private keys
+     Certificates should be renewed each year with new keys
+     Private keys should be stored offline in an encrypted zip
+     Certificates should be for URLs that will be used or accidentally used, eg. www.example.com, example.com, example.net
+     Use SHA2 or better for signature authority
+     Cipher suites should use 128 bit encryption or better
+        The following cipher suites are not be permitted:
+            Anonymous Diffie-Hellman (ADH)
+            Null cipher suites
+            Export key exchange
+            Suites with less than 112 bit encryption
+            RC4
+            3DES (it is slow)
+    Forward Secrecy (ECDHE suites), which roll the encryption forward so that the a discovered private key cannot decrypt old messages
+    Client-Initiated Renegotiation should be disabled
+    TLS Compression should be disabled
+    SSL v3 should be disabled
+    RC4 should be disabled
+    Use persistent HTTP connections (keep-alives)
+    Public resources like images should have the response header set to "Cache-Control: public" to enable them to be cached
+    OCSP Stapling should be used
+    All HTTP traffic should be over TLS (secured, as in HTTPS), including images, css, third-party links, everything
+    Cookies should be secured
+    HTTP Strict Transport Security (HSTS) should be deployed
+    Sensitive information should not be cached
+
 [[Read Handler]]
 The read handler is responsible for assebling the received packets and passing them to a parser for conversion to the goBetween format
 
