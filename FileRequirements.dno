@@ -1,7 +1,7 @@
 #! dno -version 0.1 -markup khand -tab 4
 
 [[File Handler]]
-The purpose of the file handler is support the complexities of remote files beyond the support that is offered by standard file systems and http.
+The purpose of the file handler is to support the complexities of remote files beyond that of the standard file systems
 As with any file system there are two complimentary parts:
     A file reader [[File Read]]
     And, a file writer [[File Write]]
