@@ -15,7 +15,7 @@ import java.text.SimpleDateFormat
 /**
  * This generates and verifies a "checksum" for a given string. We use the term
  * checksum when in fact, we may mean a hash (the specific implementation is
- * intentionally fluid.) A CRC checksum or some variant that can be defeated
+ * intentionally fluid.) A CRC checksum or some variant which can be defeated
  * by padding will not be used.
  *
  * This is a long checksum, 16 to 32 bytes or more.  It is not appropriate for strings
