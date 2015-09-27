@@ -6,6 +6,8 @@ package com.keithpinson.gobetweentest
  * Created: 9/13/2015
  */
 
+import com.keithpinson.gobetween.File._
+import javax.crypto.KeyGenerator
 import org.specs2.Specification
 import org.specs2.mock.Mockito
 
@@ -23,7 +25,6 @@ class FileTest extends Specification { def is = skipAllIf(false) ^
   "fail" ! failure ^
   "And, a file writer" ^ {new WriteTest} ^
   end
-
 }
 
 class ReadTest extends Specification { def is =
@@ -55,21 +56,82 @@ class ReadListenerTest extends Specification { def is =
   end
 }
 
-class FileRequestTest extends Specification { def is = pending }
-class ReadSecurityTest extends Specification { def is = pending }
-class ReadHandlerTest extends Specification { def is = pending }
-
-class ReadCacheReservationTest extends Specification { def is = pending }
-class ReadCachePrioritiesTest extends Specification { def is = pending }
-class ReadFileLocalStorageTest extends Specification { def is = pending }
-class ReadCachePruningTest extends Specification { def is = pending }
-
-class ReadFileStreamTest extends Specification { def is = failure }
-class ReadLiveUpdatesTest extends Specification { def is = pending }
-
-
-class WriteTest extends Specification with Mockito { def is =
-  pending
-
-
+class FileRequestTest extends Specification { def is =
+  "File Request Test".title ^
+  "To avoid resending files that exist in the cache a file request consists of a header with the following metadata:" ^
+  "File URL" ^ {new FileURLTest} ^
+  "File Name" ^ {new FileNameTest} ^
+  "Metadata Version" ^ {new MetadataVersionTest} ^
+  "Packets in cache" ^ {new FileSpanningTest} ^
+  "Checksum of file" ^ {new FileChecksumTest} ^
+  "Hamming-like Code" ^ {new FileHammingLikeCodeTest} ^
+  end
 }
+
+class ReadSecurityTest extends Specification { def is =
+  "Read Security Test".title ^
+  "To try and avoid security nightmares, the request of a file should be treated like an API request, where:" ^
+  "Server host is obscured" ^ {new HostObscuredTest} ^
+  "API (file server) key stored remotely" ^ {new RemoteKeyStorageTest} ^
+  "SSL (https) is used" ^ {new SSLTransportTest} ^
+  end
+}
+
+class ReadHandlerTest extends Specification { def is =
+  "Read Handler Test".title ^
+  "The read handler is responsible for assebling the received packets and passing them to a parser for conversion to the goBetween format format" ^
+  "test" ! pending ^
+  end
+}
+
+class ReadCacheReservationTest extends Specification { def is = "test" ! pending }
+
+class ReadCachePrioritiesTest extends Specification { def is = "test" ! pending }
+class ReadFileLocalStorageTest extends Specification { def is = "test" ! pending }
+class ReadCachePruningTest extends Specification { def is = "test" ! pending }
+
+class ReadFileStreamTest extends Specification { def is = "test" ! failure }
+class ReadLiveUpdatesTest extends Specification { def is = "test" ! pending }
+
+class FileURLTest extends Specification { def is = "test" ! pending }
+class FileNameTest extends Specification { def is = "test" ! pending }
+class MetadataVersionTest extends Specification { def is = "test" ! pending }
+class FileSpanningTest extends Specification { def is = "test" ! pending }
+
+class FileChecksumTest extends Specification { def is = s2"""
+  A string of characters is encrypted and then a hash, ie. checksum, is calculated $genChecksumTest
+  The checksum should support versionioning
+    Versions should have an expiry mechanism $versioningTest
+  An existing checksum can be compared against a string of characters $checksumVerifyTest
+"""
+
+  val msg = scala.util.Random.alphanumeric.take(4096).mkString
+
+  def genChecksumTest = {
+    val keyGenerator = KeyGenerator.getInstance("HmacMD5")
+    val secretKey = new String( keyGenerator.generateKey().getEncoded )
+
+    val cs = new Checksum( secretKey )
+
+    val hash = cs.checksum(msg)
+
+    hash must beAnInstanceOf[String]
+  }
+
+  def versioningTest = {
+    failure
+  }
+
+  def checksumVerifyTest = {
+    failure
+  }
+}
+
+class FileHammingLikeCodeTest extends Specification { def is = "test" ! pending }
+
+class HostObscuredTest extends Specification { def is = "test" ! pending }
+class RemoteKeyStorageTest extends Specification { def is = "test" ! pending }
+class SSLTransportTest extends Specification { def is = "test" ! pending }
+
+
+class WriteTest extends Specification with Mockito { def is = "test" ! pending }
