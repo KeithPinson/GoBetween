@@ -96,10 +96,10 @@ class Utf8 {
       else {
         val next = u8 match {
           case Array(a)                   if (a >>> 7) == 0 => Array[Byte]()
-          case Array( a, b @ _*)          if (a >>> 7) == 0 => b.to[Array[Byte]]
-          case Array( a, b, c @ _*)       if (a >>> 5) == 0x110 && (b >>> 6) == 0x10 => c.to[Array[Byte]]
-          case Array( a, b, c, d @ _*)    if (a >>> 4) == 0x1110 && (b >>> 6) == 0x10 && (c >>> 6) == 0x10 => d.to[Array[Byte]]
-          case Array( a, b, c, d, e @ _*) if (a >>> 3) == 0x11110 && (b >>> 6) == 0x10 && (c >>> 6) == 0x10 && (d >>> 6) == 0x10 => e.to[Array[Byte]]
+          case Array( a, b @ _*)          if (a >>> 7) == 0 => b.toArray
+          case Array( a, b, c @ _*)       if (a >>> 5) == 0x110 && (b >>> 6) == 0x10 => c.toArray
+          case Array( a, b, c, d @ _*)    if (a >>> 4) == 0x1110 && (b >>> 6) == 0x10 && (c >>> 6) == 0x10 => d.toArray
+          case Array( a, b, c, d, e @ _*) if (a >>> 3) == 0x11110 && (b >>> 6) == 0x10 && (c >>> 6) == 0x10 && (d >>> 6) == 0x10 => e.toArray
           case b => return b // Short circuit
         }
 
