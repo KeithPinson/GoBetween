@@ -39,14 +39,14 @@ To avoid resending files that exist in the cache a file request consists of a he
 To try and avoid security nightmares, the request of a file should be treated like an API request, where:
     Server host is obscured [[Host obscured]]
     API (file server) key stored remotely [[Remote key storage]]
-    SSL (https) is used [[SSL transport]]
+    SSL/TLS (https) is used [[SSL transport]]
 
 [[Host obscured]]
 
 [[Remote key storage]]
 
 [[SSL transport]]
-We use the term SSL because it is a recognizable acronym, we really mean SSL/TSL, the layer upon which https packets are sent
+We use the term SSL because it is a recognizable acronym, we really mean SSL/TLS, the layer upon which https packets are sent
 
      TLS v1.1 or greater, TLS v1.2 should be the first choice when negotiating the protocol
      2048 bit private keys
@@ -99,8 +99,10 @@ An existing mechanism to support this should be used
 It should be possible to restart a stalled download without the need to resend all the packets
 
 [[File Checksum]]
-A whole file has a checksum
-The term checksum is generic and a sophistacted hash should be used that results in a guaranteed unique number
+A string of characters is encrypted and then a hash, ie. checksum, is calculated
+The checksum should support versionioning
+    Versions should have an expiry mechanism
+An existing checksum can be compared against a string of characters
 
 [[File Hamming-like Code]]
 A metric must exist that can be used to compare one version of a file with another by the metric and determine how much the file has changed
@@ -112,3 +114,52 @@ A file writer consists of the following parts:
     A file store [[File Store]]
     A security package [[Write Security]]
     and, helpers to deliver the file [[Write Helpers]]
+
+[[UTF-8 Text]]
+The character encoding, UTF-8 is supported
+    All single-byte values, 0x00 - 0xff, can be UTF-8 encoded and decoded
+    The native string encoding can be converted to UTF-8
+    UTF-8 can be converted to the native string encoding
+The strings at edge condition encode properly
+    Unicode \u0000D7FF = ed 9f bf
+    Unicode \u0000E000 = ee 80 80
+    Unicode \u0000FFFD = ef bf bd
+    Unicode \u0010FFFF = f4 8f bf bf
+    Unicode \u00110000 = f4 90 80 80
+Malformed Sequences are handled
+    Unicode \u80 by itself
+    Unicode \uC0 by itself
+    Unicode \uE0 by itself
+    Unicode \uF0 by itself
+    Unicode \uF8 by itself
+    Unicode \uFC by itself
+Impossible bytes
+    Unicode \uFE
+    Unicode \uFF
+    Unicode \UFEFEFFFF
+Should not be evaluated as a null character
+    c0 80 (\u0000) is malformed
+    e0 80 80 (\u0000) is malformed
+    f0 80 80 80 (\u0000) is malformed
+    f8 80 80 80 80 (\u0000) is malformed
+    fc 80 80 80 80 80 (\u0000) is malformed
+The following Single UTF-16 surrogates
+    ed a0 80 (\uD800) is malformed
+    ed ad bf (\uDB7F) is malformed
+    ed ae 80 (\uDB80) is malformed
+    ed af bf (\uDBFF) is malformed
+    ed b0 80 (\uDC00) is malformed
+    ed be 80 (\uDF80) is malformed
+    ed bf bf (\uDFFF) is malformed
+The following Paired UTF-16 surrogates
+    ed a0 80 ed b0 80 (\uD800 \uDC00) is malformed
+    ed a0 80 ed bf bf (\uD800 \uDFFF) is malformed
+    ed ad bf ed b0 80 (\uDB7F \uDC00) is malformed
+    ed ad bf ed bf bf (\uDB7F \uDFFF) is malformed
+    ed ae 80 ed b0 80 (\uDB80 \uDC00) is malformed
+    ed ae 80 ed bf bf (\uDB80 \uDFFF) is malformed
+    ed af bf ed b0 80 (\uDBFF \uDC00) is malformed
+    ed af bf ed bf bf (\uDBFF \uDFFF) is malformed
+Legacy Codes from UTF-16
+    \uFFFF (EOF) is malformed
+    \uFFFE (byte-swap) is malformed
