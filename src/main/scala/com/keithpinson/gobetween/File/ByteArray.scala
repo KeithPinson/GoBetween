@@ -15,6 +15,6 @@ package com.keithpinson.gobetween.File
  *
  * @author [[http://keithpinson.com Keith Pinson]]
  */
-trait ByteArray {
+sealed trait ByteArray {
   val higherType : String
 }
