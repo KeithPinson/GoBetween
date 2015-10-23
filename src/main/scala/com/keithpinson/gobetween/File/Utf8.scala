@@ -8,105 +8,81 @@ package com.keithpinson.gobetween.File
 
 import java.nio.{ByteBuffer,CharBuffer}
 import java.nio.charset.{CodingErrorAction, MalformedInputException, Charset, CharacterCodingException}
+import java.lang.Integer.parseInt
 
 /**
- * All Strings should be encoded to UTF-8 before encryption and then decoded from
- * UTF-8 to a Java String after deciphering.
+ * This little class is to facilitate converting between Java Strings and UTF-8, and
+ * vice versa.
  *
- * Life would be easier if all character encoding was UTF-8. However, Java, and by
- * extension Scala, strings are encoded two-byte characters. Which, in 1995, made
- * good sense -- "all characters can be encoded in two bytes, right?" Well, no.  By
- * 1996, Unicode ran out of space and needed more bits. Choosing two-byte characters
- * without a clearly defined encoding, in hindsight, was a mistake. Most of the time
- * UTF-8 looks like 7-bit ASCII characters and rolls over to two-bytes, and
- * then three, and four as the size of Unicode value required.
+ * Some History:
  *
- *  #   Code Points     Bits  Bit Pattern
- * ---  --------------  ----  ------------------------------------------------
- *  1                    7    0xxxxxxx
- *      U+0000..U+007F        00..7F
+ * UTF-8 can encode all Unicode code points. For ASCII characters its encoding is the
+ * same and is entirely indistinguishable. For other characters a pattern of setting
+ * the high bit is used to indicate that the character length is more than one byte.
  *
- *  2                    11   110xxxxx    10xxxxxx
- *      U+0080..U+07FF        C2..DF      80..BF
+ * UTF-8 may be the best encoding we have for western hemisphere text. However it is not
+ * without its flaws: multiple UTF-8 characters can decode to a single Unicode code point
+ * and valid UTF-8 characters can decode to malformed UTF-16 characters.
  *
- *  3                    16   1110xxxx    10xxxxxx    10xxxxxx
- *      U+0800..U+0FFF        E0          A0..BF      80..BF
- *      U+1000..U+FFFF        E1..EF      80..BF      80..BF
+ * Life would be easier for a programmer if a string had only one encoding where the bit
+ * value unambiguously identified the Unicode code point. In 1995 the thinking was,
+ * "two bytes will encode all known characters" (Unicode had been that way for a decade.)
+ * By 1996, Unicode ran out of space and needed more bits.
  *
- *  4                    21   11110xxx    10xxxxxx    10xxxxxx    10xxxxxx
- *      U+10000..U+3FFFF      F0          80..BF      80..BF      80..BF
- *      U+40000..U+FFFFF      F1..F3      80..BF      80..BF      80..BF
- *      U+100000..U10FFFF     F4          80..8F      80..BF      80..BF
+ * Java and by extension, Scala, chose two-byte characters. It was an unfortunate mistake
+ * that could not be un-done, so internally UTF-16 is used which means that in some cases
+ * a character is more than two-bytes.
  *
- * The problem with UTF-16 and other two-byte encodings is that most of the time for most
- * text the second byte is unused and when converting to a byte array, every other byte is
- * zero. If the text is encrypted before it is transmitted, then compression won't be very
- * effective. If, on the other hand, the string is converted to UTF-8, then all the "every
- * other byte zeros" will have disappeared and the resulting string will be much smaller.
- * (Technically, compression of the string should happen before encoding and depending on
- * the compression technique the extra bytes will not add much to the final size).
+ * UTF-8 Format:
  *
- * So, this little class is to facilitate converting between Strings and UTF-8 and vice versa
+ * Most of the time UTF-8 looks like 7-bit ASCII characters and rolls over to two-bytes,
+ * and then three, and four as the size of Unicode value required.
+ *
+ *    #   Code Points     Bits  Bit Pattern
+ *   ---  --------------  ----  ------------------------------------------------
+ *    1                    7    0xxxxxxx
+ *        U+0000..U+007F        00..7F
+ *
+ *    2                    11   110xxxxx    10xxxxxx
+ *        U+0080..U+07FF        C0..DF      80..BF
+ *
+ *    3                    16   1110xxxx    10xxxxxx    10xxxxxx
+ *        U+0800..U+0FFF        E0          A0..BF      80..BF
+ *        U+1000..U+FFFF        E1..EF      80..BF      80..BF
+ *
+ *    4                    21   11110xxx    10xxxxxx    10xxxxxx    10xxxxxx
+ *        U+10000..U+3FFFF      F0          80..BF      80..BF      80..BF
+ *        U+40000..U+FFFFF      F1..F3      80..BF      80..BF      80..BF
+ *        U+100000..U10FFFF     F4          80..8F      80..BF      80..BF
+ *
+ * If we convert to a byte array we can see the difference between encodings. The following
+ * string, "Holy Çow!" (where the C is \u2102, a cedilla) would be encoded in Java as:
+ *
+ *                                                                ---- U+2102 ---
+ *   UTF-16 : Array(-2, -1, 0, 72, 0, 111, 0, 108, 0, 121, 0, 32, 33, 2,           0, 111, 0, 119, 0, 33)  (20 Bytes long)
+ *   UTF-8  : Array(           72,    111,    108,    121,    32, -30, -124, -126,    111,    119,    33)  (11 Bytes Long)
+ *   ASCII  : Array(           72,    111,    108,    121,    32, 63,                 111,    119,    33)  (9 Bytes, Ç becomes ?)
+ *
+ *                        If no encoding is specified, Java will replace non-ascii characters with a ? (ascii value 63)
+ *
+ * Tips for Use:
+ *
+ * In general, all Strings should be encoded to UTF-8 before encryption and then decoded
+ * from UTF-8 to a Java String after deciphering; if the string is compressed before
+ * encryption, then the encoding to UTF-8 can be skipped.
+ *
  *
  * @see [[com.keithpinson.gobetween.TermsAndConditions]]<br/>
  *
  * @author [[http://keithpinson.com Keith Pinson]]
  */
-class Utf8 {
+case class Utf8( private var tempStr:String ) {
 
-  private final val charset = Charset.forName("UTF-8")
+  private val utf8 = tempStr.getBytes("UTF-8")
 
+  tempStr = "";tempStr=null
 
-  def encodeToUTF8( plaintext:String ) : Array[Byte] = {
-    try {
-      val bytes: ByteBuffer = charset.newEncoder.encode(CharBuffer.wrap(plaintext))
-      val bytesCopy: Array[Byte] = new Array[Byte](bytes.limit)
-      System.arraycopy(bytes.array, 0, bytesCopy, 0, bytes.limit)
-      bytesCopy
-    }
-    catch {
-      case e:CharacterCodingException => throw e
-    }
-  }
+  override def toString = new String(utf8, "UTF-8")
 
-  def decodeFromUTF8( utf8Text:Array[Byte] ) : String = {
-    try {
-      val decoder = charset.newDecoder()
-      decoder.onMalformedInput(CodingErrorAction.REPORT)
-      decoder.decode(ByteBuffer.wrap(utf8Text)).toString
-    }
-    catch {
-      case e:CharacterCodingException => throw e
-      case e:java.nio.charset.MalformedInputException => throw e
-    }
-  }
-
-  def isMalformed( utf8Text:Array[Byte] ) : Boolean = {
-
-    /* Well-formed UTF-8
-
-       0xxxxxxx
-       110xxxxx    10xxxxxx
-       1110xxxx    10xxxxxx    10xxxxxx
-       11110xxx    10xxxxxx    10xxxxxx    10xxxxxx
-     */
-    def consume( u8:Array[Byte] ) : Array[Byte] = {
-
-      if( u8.isEmpty ) u8
-      else {
-        val next = u8 match {
-          case Array(a)                   if (a >>> 7) == 0 => Array[Byte]()
-          case Array( a, b @ _*)          if (a >>> 7) == 0 => b.toArray
-          case Array( a, b, c @ _*)       if (a >>> 5) == 0x110 && (b >>> 6) == 0x10 => c.toArray
-          case Array( a, b, c, d @ _*)    if (a >>> 4) == 0x1110 && (b >>> 6) == 0x10 && (c >>> 6) == 0x10 => d.toArray
-          case Array( a, b, c, d, e @ _*) if (a >>> 3) == 0x11110 && (b >>> 6) == 0x10 && (c >>> 6) == 0x10 && (d >>> 6) == 0x10 => e.toArray
-          case b => return b // Short circuit
-        }
-
-        consume(next)
-      }
-    }
-
-    consume( utf8Text ).nonEmpty
-  }
+  def getBytes = utf8
 }
