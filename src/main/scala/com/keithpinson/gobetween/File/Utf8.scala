@@ -80,7 +80,7 @@ case class Utf8( private var tempStr:String ) {
 
   private val utf8 = tempStr.getBytes("UTF-8")
 
-  tempStr = "";tempStr=null // We are done with the string
+  tempStr = "";tempStr=null // We are done with the String
 
   override def toString = new String(utf8, "UTF-8")
 
