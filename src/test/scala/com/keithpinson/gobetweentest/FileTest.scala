@@ -6,6 +6,10 @@ package com.keithpinson.gobetweentest
  * Created: 9/13/2015
  */
 
+import java.nio.ByteBuffer
+import java.nio.charset.{CharacterCodingException, CodingErrorAction, Charset}
+import java.lang.Character.{charCount, highSurrogate, lowSurrogate}
+
 import com.keithpinson.gobetween.File._
 import javax.crypto.KeyGenerator
 import javax.crypto.spec.{IvParameterSpec, SecretKeySpec}
@@ -25,7 +29,6 @@ class FileTest extends Specification { def is = skipAllIf(false) ^
   "The purpose of the file handler is to support the complexities of remote files beyond that of the standard file systems" ^ br ^
   "As with any file system there are two complimentary parts:" ^ br ^
   "A file reader" ^ {new ReadTest} ^
-//  "fail" ! failure ^
 //  "And, a file writer" ^ {new WriteTest} ^
   end
 }
@@ -62,13 +65,13 @@ class ReadListenerTest extends Specification { def is =
 class FileRequestTest extends Specification { def is =
   "File Request Test".title ^
   "To avoid resending files that exist in the cache a file request consists of a header with the following metadata:" ^
-    "UTF-8" ^ {new UTF8TextTest} ^
 //  "File URL" ^ {new FileURLTest} ^
 //  "File Name" ^ {new FileNameTest} ^
 //  "Metadata Version" ^ {new MetadataVersionTest} ^
 //  "Packets in cache" ^ {new FileSpanningTest} ^
   "UTF-8" ^ {new UTF8TextTest} ^
   "Checksum of file" ^ {new FileChecksumTest} ^
+  "Cipher" ^ {new FileCipherTest} ^
 //  "Hamming-like Code" ^ {new FileHammingLikeCodeTest} ^
   end
 }
@@ -106,17 +109,54 @@ class FileSpanningTest extends Specification { def is = "test" ! pending }
 
 class UTF8TextTest extends Specification with ScalaCheck { def is = s2"""
   The character encoding, UTF-8 is supported
-    The native encoding can be converted to UTF-8 $checkEncodeToUTF8
-    UTF-8 can be converted to the native encoding $checkDecodeFromUTF8
+    All single-byte values, 0x00 - 0x7f, can be UTF-8 encoded and decoded $checkAllSingleByteValues
+    The native string encoding can be converted to UTF-8 $checkUnicodeStrings
+    UTF-8 can be converted to the native string encoding
 """
 
-  val utf8 = new Utf8
+  //    The native encoding can be converted to UTF-8 $checkEncodeToUTF8
+  //    UTF-8 can be converted to the native encoding $checkDecodeFromUTF8
+  //    All two-byte values, 0x0000 - 0xffff, can be encoded and decoded $checkAllTwoByteValues
+
+//  val allChars = (0 to 0x2fff).map( v => Array( v >>> 8 toByte, v & 0x00ff toByte ))
+
+  private def decodeToString( bb:Array[Byte] ) : String = {
+    try {
+      val decoder = Charset.forName("UTF-16").newDecoder()
+      decoder.onMalformedInput(CodingErrorAction.REPLACE)
+      decoder.decode(ByteBuffer.wrap(bb)).toString
+    }
+    catch {
+      case e:CharacterCodingException => "?"
+      case e:java.nio.charset.MalformedInputException => "?"
+    }
+  }
+
+  private def codepointToBytes( cp:Int ) : Array[Byte] = charCount(cp) match {
+    // Little-Endian
+    case 1 => Array((cp >>> 8).toByte,(cp & 0xff).toByte)
+    case 2 => Array((highSurrogate(cp) >>> 8).toByte,(highSurrogate(cp) & 0xff).toByte,(lowSurrogate(cp) >>> 8).toByte,(lowSurrogate(cp) & 0xff).toByte)
+    case _ => Array()
+  }
+
+  val allBytes = (0 to 0x7f).map( _.toChar.toString )
+  val allUnicode = ((0 to 0xD7FF) ++ (0xE000 to 0xEFFF) ++ (0x100000 to 0x10FFFF)).map( v => decodeToString(Array(v)) )
+  val allVals = (0 to 0xffff)
 
   val maxStrLength = 4096
+  def genAllUnicode : Gen[String] = Gen.oneOf(allUnicode)
   def genUnicodeString : Gen[String] = for { cc <- Gen.nonEmptyListOf(for {n <- Gen.chooseNum(0x0000,0x26FF)} yield n.toChar) } yield cc.take(maxStrLength).mkString
+//  def genAllTwoByteValues : Gen[Array[Byte]] = Gen.oneOf(allChars)
+  def genAllBytes : Gen[String] = Gen.oneOf(allBytes)
+  def genAllWords : Gen[String] = Gen.oneOf(allWords)
+  def genAllWordValues : Gen[Int] = Gen.oneOf(allVals)
 
-  def checkEncodeToUTF8 = prop( (s:String) => utf8.encodeToUTF8(s).length must beGreaterThanOrEqualTo(s.length) ).setGen(genUnicodeString)
-  def checkDecodeFromUTF8 = prop( (s:String) => utf8.decodeFromUTF8(utf8.encodeToUTF8(s)) must beEqualTo(s) ).setGen(genUnicodeString)
+  def checkAllSingleByteValues = prop( (v:String) => {Utf8(v).toString must beEqualTo(v)} ).setGen(genAllBytes).set(minTestsOk = 0x7f, minSize = 0x7f, maxSize = 0x7f, workers=3).verbose
+  def checkUnicodeStrings = prop( (v:String) => {Utf8(v).toString must beEqualTo(v)} ).setGen(genAllBytes).set(minTestsOk = 0xff, minSize = 0xff, maxSize = 0xff, workers=3).verbose
+//  def checkAllUnicodeValues = prop( (v:String) => {Utf8(v).toString must beEqualTo(v)} ).setGen(genAllBytes).set(minTestsOk = 0xff, minSize = 0xff, maxSize = 0xff, workers=3).verbose
+//  def checkEncodeToUTF8 = prop( (s:String) => utf8.encodeToUTF8(s).length must beGreaterThanOrEqualTo(s.length) ).setGen(genUnicodeString)
+//  def checkDecodeFromUTF8 = prop( (s:String) => utf8.decodeFromUTF8(utf8.encodeToUTF8(s)) must beEqualTo(s) ).setGen(genUnicodeString)
+//  def checkAllTwoByteValues = prop( (v:Int) => {utf8.UTF8ToUnicode(utf8.unicodeToUtf8(v)) must beEqualTo(v)} ).setGen(genAllWordValues).set(minTestsOk = 0xffff, minSize = 0xffff, maxSize = 0xffff, workers=3).verbose
 }
 
 class FileChecksumTest extends Specification { def is = s2"""
@@ -157,25 +197,71 @@ class FileChecksumTest extends Specification { def is = s2"""
   }
 }
 
-/*
-class FileCipherTest extends Specification { def is = s2"""
-    $test
+class FileCipherTest extends Specification with ScalaCheck { def is = s2"""
+Text encoding is supported
+    The cipher uses a 256-bit key $check256bKeys
+    And, keys less than 256-bits fail $checkLessThan256bKeys
+    Text can be encrypted with a cipher $encryptTextTest
+    An encrypted string can be deciphered back to its original text $checkDecryption
   """
 
   val secretKey = {
     val keyGenerator = KeyGenerator.getInstance("HmacSHA256")
-    new String( keyGenerator.generateKey().getEncoded )
+    keyGenerator.generateKey().getEncoded
   }
 
 
   val iv = {
-    val ivSpec = new IvParameterSpec( scala.util.Random.alphanumeric.take(16).mkString.getBytes )
-    new String(ivSpec.getIV)
+    val ivSpec = new IvParameterSpec( KeyGenerator.getInstance("AES").generateKey.getEncoded )
+    ivSpec.getIV
   }
 
-  val test = pending
+//  val secretKeyObj = KeyGenerator.getInstance("HmacSHA256").generateKey
+//  val ivObj = new IvParameterSpec(KeyGenerator.getInstance("AES").generateKey.getEncoded)
+
+  val keyLength = 32
+  def genKeyBytes : Gen[Array[Byte]] = for { cc <- Gen.listOfN(keyLength, for {n <- Gen.chooseNum(0x0000,0x26FF)} yield n.toByte) } yield cc.take(keyLength).toArray
+
+  def check256bKeys = prop( (k:Array[Byte]) => {
+    val cipher = new Cipher(iv,k)
+    val s = "a simple message"
+    cipher.encrypt(s).length must beGreaterThanOrEqualTo(s.length)
+  } ).setGen(genKeyBytes)
+
+
+  def genShortKeyString : Gen[String] = for { cc <- Gen.nonEmptyListOf(for {n <- Gen.chooseNum(0x0000,0x26FF)} yield n.toChar) } yield cc.take(keyLength-1).mkString
+
+  def checkLessThan256bKeys = prop( (k:String) => {
+/*
+    val cipher = new Cipher(iv,k)
+    val s = "a simple message"
+    cipher.encrypt(s).length must beLessThanOrEqualTo(1)
+*/
+success
+  } ).setGen(genShortKeyString)
+
+
+  def encryptTextTest = {
+    val cipher = new Cipher(iv,secretKey)
+
+    val msg = scala.util.Random.alphanumeric.take(4096).mkString
+
+    cipher.encrypt( msg ) must not( beEqualTo(msg) )
+  }
+
+  val maxMsgLength = 4096
+//  def genMsgString : Gen[String] = for { cc <- Gen.nonEmptyListOf(for {n <- Gen.chooseNum(0x0000,0x26FF)} yield n.toChar) } yield cc.take(maxMsgLength).mkString
+  def genMsgString : Gen[String] = for { cc <- Gen.nonEmptyListOf(for {n <- Gen.chooseNum(0x0000,0xFFFFF)} yield Character.toChars(n)) } yield cc.take(maxMsgLength).flatten.mkString
+
+  def checkDecryption = prop( (ss:String) => {
+    val cipher = new Cipher(iv,secretKey)
+    println( "encrypt: (" + ss.length + ") " + ss.take(12).toArray.map(_.toInt).mkString(",") )
+//    cipher.decrypt(cipher.encrypt(ss)).toArray.map(_.toInt) must beEqualTo(ss.toArray.map(_.toInt))
+    success
+  } ).setGen(genMsgString)
 }
 
+/*
 class FileHammingLikeCodeTest extends Specification { def is = "test" ! pending }
 
 class HostObscuredTest extends Specification { def is = "test" ! pending }
