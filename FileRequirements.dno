@@ -117,49 +117,6 @@ A file writer consists of the following parts:
 
 [[UTF-8 Text]]
 The character encoding, UTF-8 is supported
-    All single-byte values, 0x00 - 0xff, can be UTF-8 encoded and decoded
+    All single-byte values, 0x00 - 0x7f, can be UTF-8 encoded and decoded
     The native string encoding can be converted to UTF-8
     UTF-8 can be converted to the native string encoding
-The strings at edge condition encode properly
-    Unicode \u0000D7FF = ed 9f bf
-    Unicode \u0000E000 = ee 80 80
-    Unicode \u0000FFFD = ef bf bd
-    Unicode \u0010FFFF = f4 8f bf bf
-    Unicode \u00110000 = f4 90 80 80
-Malformed Sequences are handled
-    Unicode \u80 by itself
-    Unicode \uC0 by itself
-    Unicode \uE0 by itself
-    Unicode \uF0 by itself
-    Unicode \uF8 by itself
-    Unicode \uFC by itself
-Impossible bytes
-    Unicode \uFE
-    Unicode \uFF
-    Unicode \UFEFEFFFF
-Should not be evaluated as a null character
-    c0 80 (\u0000) is malformed
-    e0 80 80 (\u0000) is malformed
-    f0 80 80 80 (\u0000) is malformed
-    f8 80 80 80 80 (\u0000) is malformed
-    fc 80 80 80 80 80 (\u0000) is malformed
-The following Single UTF-16 surrogates
-    ed a0 80 (\uD800) is malformed
-    ed ad bf (\uDB7F) is malformed
-    ed ae 80 (\uDB80) is malformed
-    ed af bf (\uDBFF) is malformed
-    ed b0 80 (\uDC00) is malformed
-    ed be 80 (\uDF80) is malformed
-    ed bf bf (\uDFFF) is malformed
-The following Paired UTF-16 surrogates
-    ed a0 80 ed b0 80 (\uD800 \uDC00) is malformed
-    ed a0 80 ed bf bf (\uD800 \uDFFF) is malformed
-    ed ad bf ed b0 80 (\uDB7F \uDC00) is malformed
-    ed ad bf ed bf bf (\uDB7F \uDFFF) is malformed
-    ed ae 80 ed b0 80 (\uDB80 \uDC00) is malformed
-    ed ae 80 ed bf bf (\uDB80 \uDFFF) is malformed
-    ed af bf ed b0 80 (\uDBFF \uDC00) is malformed
-    ed af bf ed bf bf (\uDBFF \uDFFF) is malformed
-Legacy Codes from UTF-16
-    \uFFFF (EOF) is malformed
-    \uFFFE (byte-swap) is malformed
