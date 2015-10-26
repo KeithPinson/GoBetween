@@ -110,15 +110,9 @@ class FileSpanningTest extends Specification { def is = "test" ! pending }
 class UTF8TextTest extends Specification with ScalaCheck { def is = s2"""
   The character encoding, UTF-8 is supported
     All single-byte values, 0x00 - 0x7f, can be UTF-8 encoded and decoded $checkAllSingleByteValues
-    The native string encoding can be converted to UTF-8 $checkUnicodeStrings
-    UTF-8 can be converted to the native string encoding
+    The native string encoding can be converted to UTF-8 $checkUtf8
+    UTF-8 can be converted to the native string encoding $checkUnicodeCodepoints
 """
-
-  //    The native encoding can be converted to UTF-8 $checkEncodeToUTF8
-  //    UTF-8 can be converted to the native encoding $checkDecodeFromUTF8
-  //    All two-byte values, 0x0000 - 0xffff, can be encoded and decoded $checkAllTwoByteValues
-
-//  val allChars = (0 to 0x2fff).map( v => Array( v >>> 8 toByte, v & 0x00ff toByte ))
 
   private def decodeToString( bb:Array[Byte] ) : String = {
     try {
@@ -135,28 +129,56 @@ class UTF8TextTest extends Specification with ScalaCheck { def is = s2"""
   private def codepointToBytes( cp:Int ) : Array[Byte] = charCount(cp) match {
     // Little-Endian
     case 1 => Array((cp >>> 8).toByte,(cp & 0xff).toByte)
-    case 2 => Array((highSurrogate(cp) >>> 8).toByte,(highSurrogate(cp) & 0xff).toByte,(lowSurrogate(cp) >>> 8).toByte,(lowSurrogate(cp) & 0xff).toByte)
+    case 2 => Array( (highSurrogate(cp) >>> 8).toByte, (highSurrogate(cp) & 0xff).toByte, (lowSurrogate(cp) >>> 8).toByte, (lowSurrogate(cp) & 0xff).toByte )
     case _ => Array()
   }
 
+  def isMalformed( utf8Text:Array[Byte] ) : Boolean = {
+
+    /* Well-formed UTF-8
+
+       0xxxxxxx
+       110xxxxx    10xxxxxx
+       1110xxxx    10xxxxxx    10xxxxxx
+       11110xxx    10xxxxxx    10xxxxxx    10xxxxxx
+     */
+    def consume( u8:Array[Byte] ) : Array[Byte] = {
+
+      import java.lang.Integer.parseInt
+
+      if( u8.isEmpty ) u8
+      else {
+        val next = u8 match {
+          case Array(a)                   if (a >>> 7) == 0 => Array[Byte]()
+          case Array( a, b @ _*)          if (a >>> 7) == 0 => b.toArray
+          case Array( a, b, c @ _*)       if (a >>> 5 & 0x7) == parseInt("110",2) && (b >>> 6 & 0x3) == parseInt("10",2) => c.toArray
+          case Array( a, b, c, d @ _*)    if (a >>> 4 & 0xf) == parseInt("1110",2) && (b >>> 6 & 0x3) == parseInt("10",2) && (c >>> 6 & 0x3) == parseInt("10",2) => d.toArray
+          case Array( a, b, c, d, e @ _*) if (a >>> 3 & 0x1f) == parseInt("11110",2) && (b >>> 6 & 0x3) == parseInt("10",2) && (c >>> 6 & 0x3) == parseInt("10",2) && (d >>> 6 & 0x3) == parseInt("10",2) => e.toArray
+          case b => return b // Short circuit
+        }
+
+        consume(next)
+      }
+    }
+
+    consume( utf8Text ).nonEmpty
+  }
+
   val allBytes = (0 to 0x7f).map( _.toChar.toString )
-  val allUnicode = ((0 to 0xD7FF) ++ (0xE000 to 0xEFFF) ++ (0x100000 to 0x10FFFF)).map( v => decodeToString(Array(v)) )
-  val allVals = (0 to 0xffff)
+  val allUnicode = ((0 to 0xD7FF) ++ (0xE000 to 0xEFFF) ++ (0x100000 to 0x10FFFF)).map( v => decodeToString(codepointToBytes(v)) )
+  val allChars = (0 to 0x2fff).map( v => new String(Array( (v >>> 8).toByte, (v & 0x00ff).toByte ),"UTF-16") )
+
 
   val maxStrLength = 4096
   def genAllUnicode : Gen[String] = Gen.oneOf(allUnicode)
   def genUnicodeString : Gen[String] = for { cc <- Gen.nonEmptyListOf(for {n <- Gen.chooseNum(0x0000,0x26FF)} yield n.toChar) } yield cc.take(maxStrLength).mkString
-//  def genAllTwoByteValues : Gen[Array[Byte]] = Gen.oneOf(allChars)
   def genAllBytes : Gen[String] = Gen.oneOf(allBytes)
-  def genAllWords : Gen[String] = Gen.oneOf(allWords)
-  def genAllWordValues : Gen[Int] = Gen.oneOf(allVals)
+  def genAllChars : Gen[String] = Gen.oneOf(allChars)
 
   def checkAllSingleByteValues = prop( (v:String) => {Utf8(v).toString must beEqualTo(v)} ).setGen(genAllBytes).set(minTestsOk = 0x7f, minSize = 0x7f, maxSize = 0x7f, workers=3).verbose
+  def checkUnicodeCodepoints = prop( (v:String) => {Utf8(v).toString must beEqualTo(v)} ).setGen(genAllUnicode).set(minTestsOk = 0x1E7FD, minSize = 0x1E7FD, maxSize = 0x1E7FD, workers=3).verbose
+  def checkUtf8 = prop( (v:String) => {isMalformed(Utf8(v).getBytes) must beFalse} ).setGen(genAllUnicode).set(minTestsOk = 0x2fff, minSize = 0x2fff, maxSize = 0x2fff, workers=3).verbose
   def checkUnicodeStrings = prop( (v:String) => {Utf8(v).toString must beEqualTo(v)} ).setGen(genAllBytes).set(minTestsOk = 0xff, minSize = 0xff, maxSize = 0xff, workers=3).verbose
-//  def checkAllUnicodeValues = prop( (v:String) => {Utf8(v).toString must beEqualTo(v)} ).setGen(genAllBytes).set(minTestsOk = 0xff, minSize = 0xff, maxSize = 0xff, workers=3).verbose
-//  def checkEncodeToUTF8 = prop( (s:String) => utf8.encodeToUTF8(s).length must beGreaterThanOrEqualTo(s.length) ).setGen(genUnicodeString)
-//  def checkDecodeFromUTF8 = prop( (s:String) => utf8.decodeFromUTF8(utf8.encodeToUTF8(s)) must beEqualTo(s) ).setGen(genUnicodeString)
-//  def checkAllTwoByteValues = prop( (v:Int) => {utf8.UTF8ToUnicode(utf8.unicodeToUtf8(v)) must beEqualTo(v)} ).setGen(genAllWordValues).set(minTestsOk = 0xffff, minSize = 0xffff, maxSize = 0xffff, workers=3).verbose
 }
 
 class FileChecksumTest extends Specification { def is = s2"""
