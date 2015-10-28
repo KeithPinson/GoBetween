@@ -251,16 +251,14 @@ Text encoding is supported
   } ).setGen(genKeyBytes)
 
 
+  val shortKeyLength = 24
   def genShortKeyString : Gen[String] = for { cc <- Gen.nonEmptyListOf(for {n <- Gen.chooseNum(0x0000,0x26FF)} yield n.toChar) } yield cc.take(keyLength-1).mkString
 
-  def checkLessThan256bKeys = prop( (k:String) => {
-/*
-    val cipher = new Cipher(iv,k)
+  def checkLessThan256bKeys = prop( (k:Array[Byte]) => {
+    val cipher = new Cipher(iv,k.take(shortKeyLength))
     val s = "a simple message"
     cipher.encrypt(s).length must beLessThanOrEqualTo(1)
-*/
-success
-  } ).setGen(genShortKeyString)
+  } ).setGen(genKeyBytes)
 
 
   def encryptTextTest = {
