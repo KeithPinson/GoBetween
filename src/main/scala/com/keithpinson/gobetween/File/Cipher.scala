@@ -7,26 +7,28 @@ package com.keithpinson.gobetween.File
  */
 
 import java.security.Security
-import javax.crypto.{SecretKey, KeyGenerator, Cipher=>xCipher}
+import javax.crypto.{Cipher => xCipher, _}
 import javax.crypto.spec.{IvParameterSpec, SecretKeySpec}
 import java.text.SimpleDateFormat
 import java.util.Date
-import org.bouncycastle.jce.provider.BouncyCastleProvider
+import javax.management.openmbean.InvalidKeyException
+import com.typesafe.scalalogging
+
 
 /**
  * This is used for encrypting and decrypting strings using a block cipher.
  *
- * Note: the Initialization Vector should never be re-used.
+ * Note: the Initialization Vector should be one that is never re-used.
  *
- * Some ciphers may not leak information if the IV is reused, but others are
- * worse and will leak it all. So to avoid a programming blunder, ensure that
- * the provided IV is always unique.
+ * Some ciphers leak no information if the IV is reused, but others are much
+ * worse and will leak it all if reused. So, to avoid a programming blunder,
+ * you must ensure that the provided IV is unique.
  *
  * @see [[com.keithpinson.gobetween.TermsAndConditions]]<br/>
  *
  * @author [[http://keithpinson.com Keith Pinson]]
  */
-class Cipher( iv:String, secretKey:String ) {
+class Cipher( iv:Array[Byte], secretKey:Array[Byte] ) {
 
   // Current version should be at the head position
   final private val versions = scala.collection.SortedMap(
@@ -34,36 +36,70 @@ class Cipher( iv:String, secretKey:String ) {
     'A'.toByte -> "2000-01-01T00:00:00Z"  // Expired
   )
 
-  private def encryptB( plaintext:String, ver:Char ) = {
+  private def cipherB( isEncrypted:Boolean, s:String, ver:Char ) : String = {
 
-    // Add Bouncy Castle, will return -1 if it is added already
+    import org.bouncycastle.jce.provider.BouncyCastleProvider
+
+    // Short-circuit if the keylength is bad
+    if( secretKey.length < 32 ) return "A"
+
+    // No harm calling this repeatedly since Add Bouncy Castle ("BC") will just return -1 if it is added already
     Security.addProvider(new org.bouncycastle.jce.provider.BouncyCastleProvider())
 
-    val secretKeyObj = new SecretKeySpec(secretKey.getBytes("utf-8"), "HmacSHA256")
-    val ivObj = new IvParameterSpec(iv.getBytes("utf-8"))
+//    val secretKeyObj = new SecretKeySpec(secretKey.take(16), "HmacSHA256")
+    val secretKeyObj = new SecretKeySpec(secretKey, "HmacSHA256")
+
+//    val secretKeyObj = KeyGenerator.getInstance("AES").generateKey
+    val ivObj = new IvParameterSpec(iv)
 
     val cipher = xCipher.getInstance("AES/CTR/NoPadding", BouncyCastleProvider.PROVIDER_NAME)
-    cipher.init(xCipher.ENCRYPT_MODE, secretKeyObj, ivObj)
 
-    new String( cipher.doFinal(plaintext.getBytes("utf-8")) )
+    try {
+      cipher.init(if (isEncrypted) xCipher.DECRYPT_MODE else xCipher.ENCRYPT_MODE, secretKeyObj, ivObj)
+    }
+    catch {
+      case e:java.security.InvalidKeyException => System.err.println(">"*5 + " key length: " + secretKey.length * 8 + ", max allowed: " + xCipher.getMaxAllowedKeyLength("AES") + "\n\nJava Cryptography Extension (JCE) is not installed\n\n" + scala.util.Properties.jdkHome + "\n\n" ); throw e   // Caused be not having JCE (Java Cryptography Extension) Unlimited Strength installed
+    }
+
+//    val utf = new Utf8
+
+    try {
+      if (isEncrypted)
+//UTF-8 doesn't work in all cases
+//encode to base64 ?
+//        new String(utf.decodeFromUTF8(cipher.doFinal(s.tail.getBytes("UTF8"))))  // Decrypt just the tail
+//      else
+//        new String(ver.toByte +: cipher.doFinal(utf.encodeToUTF8(s)))             // Encrypt and add ver as the head
+//        new String(cipher.doFinal(s.tail),"UTF16")  // Decrypt just the tail
+        new String()
+      else
+        new String(ver.toByte +: cipher.doFinal(s.getBytes("UTF16")))             // Encrypt and add ver as the head
+    }
+    catch {
+      case e:IllegalBlockSizeException => throw e //"A"
+      case e:BadPaddingException => throw e //"A"
+    }
   }
 
   def encrypt( plaintext:String ) : String = {
     val csVersion = versions.last._1
 
-    plaintext.getBytes("utf-8")
-
     csVersion match {
-      case 'B' => encryptB( plaintext, 'B' )
+      case 'B' => cipherB( isEncrypted = false, plaintext, 'B' )
       case _ => "A"
     }
   }
 
   def decrypt( encryptedString:String ) : String = {
-    if( ! isExpired( encryptedString ) ) {
-      encryptedString.getBytes("utf-8")
 
-      ""
+    if( ! isExpired( encryptedString ) ) {
+
+      val csVersion = encryptedString.head
+
+      csVersion match {
+        case 'B' => cipherB( isEncrypted = true, encryptedString, 'B' )
+        case _ => "A"
+      }
     }
     else {
       ""
