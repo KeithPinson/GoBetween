@@ -246,8 +246,8 @@ Text encoding is supported
 
   def check256bKeys = prop( (k:Array[Byte]) => {
     val cipher = new Cipher(iv,k)
-    val s = "a simple message"
-    cipher.encrypt(s).length must beGreaterThanOrEqualTo(s.length)
+    val bb = "a simple message".getBytes
+    cipher.encrypt(bb).length must beGreaterThanOrEqualTo(bb.length)
   } ).setGen(genKeyBytes)
 
 
@@ -256,28 +256,29 @@ Text encoding is supported
 
   def checkLessThan256bKeys = prop( (k:Array[Byte]) => {
     val cipher = new Cipher(iv,k.take(shortKeyLength))
-    val s = "a simple message"
-    cipher.encrypt(s).length must beLessThanOrEqualTo(1)
+    val bb = "a simple message".getBytes
+    cipher.encrypt(bb).length must beLessThanOrEqualTo(1)
   } ).setGen(genKeyBytes)
 
 
   def encryptTextTest = {
     val cipher = new Cipher(iv,secretKey)
 
-    val msg = scala.util.Random.alphanumeric.take(4096).mkString
+    val msg = scala.util.Random.alphanumeric.take(4096).mkString.getBytes
 
+    // Was it encrypted?
     cipher.encrypt( msg ) must not( beEqualTo(msg) )
   }
 
   val maxMsgLength = 4096
-//  def genMsgString : Gen[String] = for { cc <- Gen.nonEmptyListOf(for {n <- Gen.chooseNum(0x0000,0x26FF)} yield n.toChar) } yield cc.take(maxMsgLength).mkString
-  def genMsgString : Gen[String] = for { cc <- Gen.nonEmptyListOf(for {n <- Gen.chooseNum(0x0000,0xFFFFF)} yield Character.toChars(n)) } yield cc.take(maxMsgLength).flatten.mkString
+  def genMsgString : Gen[String] = for { cc <- Gen.nonEmptyListOf(for {n <- Gen.chooseNum(0x0000,0x26FF)} yield n.toChar) } yield cc.take(maxMsgLength).mkString
+//  def genMsgString : Gen[String] = for { cc <- Gen.nonEmptyListOf(for {n <- Gen.chooseNum(0x0000,0xFFFFF)} yield Character.toChars(n)) } yield cc.take(maxMsgLength).flatten.mkString
 
   def checkDecryption = prop( (ss:String) => {
     val cipher = new Cipher(iv,secretKey)
-    println( "encrypt: (" + ss.length + ") " + ss.take(12).toArray.map(_.toInt).mkString(",") )
-//    cipher.decrypt(cipher.encrypt(ss)).toArray.map(_.toInt) must beEqualTo(ss.toArray.map(_.toInt))
-    success
+    val bb = ss.getBytes("UTF-8")
+//    println( "encrypt: (" + ss.length + ") " + ss.take(12).toArray.map(_.toInt).mkString(",") )
+    cipher.decrypt(cipher.encrypt(bb)) must beEqualTo(bb)
   } ).setGen(genMsgString)
 }
 

@@ -36,12 +36,14 @@ class Cipher( iv:Array[Byte], secretKey:Array[Byte] ) {
     'A'.toByte -> "2000-01-01T00:00:00Z"  // Expired
   )
 
-  private def cipherB( isEncrypted:Boolean, s:String, ver:Char ) : String = {
+  private def cipherB( isEncrypted:Boolean, bb:Array[Byte], ver:Char ) : Array[Byte] = {
 
     import org.bouncycastle.jce.provider.BouncyCastleProvider
 
+    val emptyResult = if( isEncrypted ) Array[Byte]() else "A".getBytes
+
     // Short-circuit if the keylength is bad
-    if( secretKey.length < 32 ) return "A"
+    if( secretKey.length < 32 ) return emptyResult
 
     // No harm calling this repeatedly since Add Bouncy Castle ("BC") will just return -1 if it is added already
     Security.addProvider(new org.bouncycastle.jce.provider.BouncyCastleProvider())
@@ -49,65 +51,56 @@ class Cipher( iv:Array[Byte], secretKey:Array[Byte] ) {
 //    val secretKeyObj = new SecretKeySpec(secretKey.take(16), "HmacSHA256")
     val secretKeyObj = new SecretKeySpec(secretKey, "HmacSHA256")
 
-//    val secretKeyObj = KeyGenerator.getInstance("AES").generateKey
     val ivObj = new IvParameterSpec(iv)
 
     val cipher = xCipher.getInstance("AES/CTR/NoPadding", BouncyCastleProvider.PROVIDER_NAME)
 
     try {
-      cipher.init(if (isEncrypted) xCipher.DECRYPT_MODE else xCipher.ENCRYPT_MODE, secretKeyObj, ivObj)
+      cipher.init(if(isEncrypted) xCipher.DECRYPT_MODE else xCipher.ENCRYPT_MODE, secretKeyObj, ivObj)
     }
     catch {
       case e:java.security.InvalidKeyException => System.err.println(">"*5 + " key length: " + secretKey.length * 8 + ", max allowed: " + xCipher.getMaxAllowedKeyLength("AES") + "\n\nJava Cryptography Extension (JCE) is not installed\n\n" + scala.util.Properties.jdkHome + "\n\n" ); throw e   // Caused be not having JCE (Java Cryptography Extension) Unlimited Strength installed
     }
 
-//    val utf = new Utf8
-
     try {
-      if (isEncrypted)
-//UTF-8 doesn't work in all cases
-//encode to base64 ?
-//        new String(utf.decodeFromUTF8(cipher.doFinal(s.tail.getBytes("UTF8"))))  // Decrypt just the tail
-//      else
-//        new String(ver.toByte +: cipher.doFinal(utf.encodeToUTF8(s)))             // Encrypt and add ver as the head
-//        new String(cipher.doFinal(s.tail),"UTF16")  // Decrypt just the tail
-        new String()
+      if(isEncrypted)
+        cipher.doFinal(bb.tail)           // Decrypt just the tail
       else
-        new String(ver.toByte +: cipher.doFinal(s.getBytes("UTF16")))             // Encrypt and add ver as the head
+        ver.toByte +: cipher.doFinal(bb)  // Encrypt and add ver as the head
     }
     catch {
-      case e:IllegalBlockSizeException => throw e //"A"
-      case e:BadPaddingException => throw e //"A"
+      case e:IllegalBlockSizeException => /*throw e*/ emptyResult
+      case e:BadPaddingException => /*throw e*/ emptyResult
     }
   }
 
-  def encrypt( plaintext:String ) : String = {
+  def encrypt( plaintextBytes:Array[Byte] ) : Array[Byte] = {
     val csVersion = versions.last._1
 
     csVersion match {
-      case 'B' => cipherB( isEncrypted = false, plaintext, 'B' )
-      case _ => "A"
+      case 'B' => cipherB( isEncrypted = false, plaintextBytes, 'B' )
+      case _ => "A".getBytes
     }
   }
 
-  def decrypt( encryptedString:String ) : String = {
+  def decrypt( encryptedBytes:Array[Byte] ) : Array[Byte] = {
 
-    if( ! isExpired( encryptedString ) ) {
+    if( ! isExpired( encryptedBytes ) ) {
 
-      val csVersion = encryptedString.head
+      val csVersion = encryptedBytes.head
 
       csVersion match {
-        case 'B' => cipherB( isEncrypted = true, encryptedString, 'B' )
-        case _ => "A"
+        case 'B' => cipherB( isEncrypted = true, encryptedBytes, 'B' )
+        case _ => Array[Byte]()
       }
     }
     else {
-      ""
+      Array[Byte]()
     }
   }
 
-  private def isExpired( encryptedString:String ) : Boolean = {
-    val csVersion = encryptedString.head
+  private def isExpired( encryptedBytes:Array[Byte] ) : Boolean = {
+    val csVersion = encryptedBytes.head
     val dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'")
     val now = new Date(System.currentTimeMillis + 60 * 60 * 1000)
 
