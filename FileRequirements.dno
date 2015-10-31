@@ -105,9 +105,9 @@ The checksum should support versionioning
 An existing checksum can be compared against a string of characters
 
 [[File Hamming-like Code]]
-A metric must exist that can be used to compare one version of a file with another by the metric and determine how much the file has changed
-The purpose of the metric is allow the cached version of a file to be displayed if it is not wildly different than the file to be streamed
-The metric to be used is a code and the difference between two codes is the
+A metric must exist that can be used to compare one version of a file with another of the same type by the metric and determine how much the file has changed
+The purpose of the metric is to allow the cached version of a file to be displayed if it is not wildly different than the file to be streamed
+The metric to be used is not defined, however the difference between two metrics yields a floating point number where 1.0 is completely different and 0.0 means the same
 
 [[File Write]]
 A file writer consists of the following parts:
