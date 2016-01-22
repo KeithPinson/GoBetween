@@ -21,15 +21,15 @@ import org.scalacheck.{Arbitrary, Gen, Prop}
 class MarkdownTest extends Specification { def is = sequential ^
   "Markdown's original purpose was to convert type written text to html markup" ^ br ^
   "For our purposes, Markdown's job (including the embedded html) is to convert text to the GoBetween Intermediate Structure" ^ br ^
-  new MarkdownTerminologyTest
+  new MarkdownTerminologyTest ^
   new MarkdownSyntaxTest
 }
 
 class MarkdownSyntaxTest extends Specification with ScalaCheck with MarkdownTestHelpers { def is = s2"""
   Any sequence of characters is a valid markdown document $checkDocument
-
 """
-  def checkDocument = prop( (s:String) => failure ).setGen(genLine)
+
+  def checkDocument = prop( (s:String) => s must beMatching(""".*$""") ).setGen(genUnicodeString)
 }
 
 
@@ -121,7 +121,10 @@ class MarkdownTerminologyTest extends Specification with ScalaCheck with Markdow
 }
 
 trait MarkdownTestHelpers {
+  val maxStrLength = 4096
+
   def genUnicode : Gen[Char] = for { c <- Gen.chooseNum(0x0000,0x26FF) } yield c.toChar
+  def genUnicodeString : Gen[String] = for { cc <- Gen.nonEmptyListOf(genUnicode) } yield cc.take(maxStrLength).mkString
   def genLine : Gen[String] = for { cc <- Gen.nonEmptyListOf(Gen.alphaNumChar); e <- genEOL } yield cc.take(80).mkString + e
   def genEOL : Gen[String] = for { cc <- Gen.oneOf("\n","\r","\r\n") } yield cc
   def genBlankLine : Gen[String] = for { ww <- genWhitespace; cc <- genEOL } yield ww + cc
