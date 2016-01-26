@@ -15,8 +15,7 @@ import org.scalacheck.{Arbitrary, Gen, Prop}
  * Test the Markdown class using ScalaCheck and Specs2 as specified in the Markdown Requirements.
  *
  * @see [[com.keithpinson.gobetween.TermsAndConditions]]<br/>
- *
- * @author [[http://keithpinson.com Keith Pinson]]
+  * @author [[http://keithpinson.com Keith Pinson]]
  */
 class MarkdownTest extends Specification { def is = sequential ^
   "Markdown's original purpose was to convert type written text to html markup" ^ br ^
@@ -27,11 +26,25 @@ class MarkdownTest extends Specification { def is = sequential ^
 
 class MarkdownSyntaxTest extends Specification with ScalaCheck with MarkdownTestHelpers { def is = s2"""
   Any sequence of characters is a valid markdown document $checkDocument
+  Markdown can contain inserted html markup ${new HtmlMarkupTest}
 """
 
   def checkDocument = prop( (s:String) => s must beMatching(""".*$""") ).setGen(genUnicodeString)
 }
 
+
+class HtmlMarkupTest extends Specification with ScalaCheck with MarkdownTestHelpers { def is = s2"""
+  Html Markup may be copied and pasted into a document, so all HTML Markup should be processed
+  For the purposes of markdown we are only concerned with a subset of html, but still we must be able to identify the following declarations:
+      Html comment[[HTML Comment]]
+      Xml Declaration[[XML Declaration]]
+      Doctype Declaration[[Doctype Declaration]]
+      Character Data[[Character Data]]
+      Html Tag[[HTML Tag]]
+  Code blocks have a higher precedence than all HTML markup
+  All HTML that is generated from Markdown is treated as inline markup
+"""
+}
 
 class MarkdownTerminologyTest extends Specification with ScalaCheck with MarkdownTestHelpers { def is = s2"""
   The Markdown Requirements Document defines the following terms to mean:
